@@ -25,7 +25,7 @@ def get_roleclass_by_name(role_class):
     for role in Role.get_roles():
         if role.get_class_name() == role_class:
             return role
-    raise exceptions.RoleNotFound
+    raise exceptions.RoleNotFound()
 
 
 def discover_and_register_roles():

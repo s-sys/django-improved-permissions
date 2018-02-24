@@ -1,3 +1,5 @@
 from django.contrib import admin
 
-# Register your models here.
+from testapp2.models import Library
+
+admin.site.register(Library)

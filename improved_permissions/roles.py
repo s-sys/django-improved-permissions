@@ -50,6 +50,10 @@ class Role(object):
 
         raise ImproperlyConfigured('Provide a list of Model classes via "models".')
 
+    @classmethod
+    def is_my_model(cls, model):
+        return model in cls.get_models()
+
 
 class SuperUser(Role):
     """

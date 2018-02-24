@@ -9,3 +9,6 @@ class RoleNotFound(Exception):
 
 class InvalidRoleAssignment(Exception):
     pass
+
+class BadRoleArguments(Exception):
+    pass
