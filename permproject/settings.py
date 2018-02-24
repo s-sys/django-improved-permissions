@@ -44,8 +44,7 @@ EXTERNAL_APPS = []
 INTERNAL_APPS = [
     'improved_permissions',
     'testapp1',
-    'testapp2',
-    'testapp3',
+    'testapp2'
 ]
 
 INSTALLED_APPS = DJANGO_APPS + EXTERNAL_APPS + INTERNAL_APPS
