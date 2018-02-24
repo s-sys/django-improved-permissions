@@ -52,6 +52,14 @@ class RoleManager(object):
         return list(cls.__ROLE_CLASSES_LIST)
 
     @classmethod
+    def cleanup(cls):
+        """
+        Flush the current list of all
+        Roles registered in the project.
+        """
+        cls.__ROLE_CLASSES_LIST = list()
+
+    @classmethod
     def __validate(cls, new_class):
         """
         Check if all attributes needed
@@ -85,7 +93,7 @@ class RoleManager(object):
                                        'class "{name}".'.format(name=name))
 
         # Ensuring that "unique" exists.
-        if not hasattr(new_class, 'unique') or isinstance(new_class.unique, bool):
+        if not hasattr(new_class, 'unique') or not isinstance(new_class.unique, bool):
             new_class.unique = False
 
 
