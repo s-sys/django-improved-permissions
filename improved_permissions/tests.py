@@ -86,26 +86,15 @@ class ShortcutsTest(TestCase):
 
     def test_assign_roles(self):
         """ test if the assignment methods work fine """
-        shortcuts.assign_role(self.john, Teacher, self.bob)
-        shortcuts.assign_role(self.mike, Teacher, self.bob)
+        shortcuts.assign_roles([self.john, self.mike], Teacher, self.bob)
 
         users_list = shortcuts.get_users_by_role(Teacher, self.bob)
         self.assertEqual(users_list, [self.john, self.mike])
 
-    def test_assign_unique_roles(self):
+    def test_assign_roles_unique(self):
         """ test if 'unique' attribute works fine """
         shortcuts.assign_role(self.john, Advisor, self.bob)
-
-        users_list = shortcuts.get_users_by_role(Advisor, self.bob)
-        self.assertEqual(users_list, [self.john])
 
         # Trying to add the role again using a Role with unique=True
         with self.assertRaises(exceptions.InvalidRoleAssignment):
             shortcuts.assign_role(self.mike, Advisor, self.bob)
-
-    def _test_parents(self):
-
-        shortcuts.assign_role(self.user1, Advisor, self.user2)
-        rp = RolePermission.objects.get(pk=1)
-        a = utils.get_permissions_parents(rp)
-        print(a)

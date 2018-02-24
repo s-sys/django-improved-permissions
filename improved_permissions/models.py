@@ -5,13 +5,13 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from improved_permissions.roles import Role
+from improved_permissions.roles import RoleManager
 from improved_permissions.utils import get_roleclass
 
 
 class RolePermission(models.Model):
     """
-    Role
+    RolePermission
 
     This model rocks.
 
@@ -42,7 +42,7 @@ class RolePermission(models.Model):
         return output
 
     def clean(self):
-        for role_class in Role.get_roles():
+        for role_class in RoleManager.get_roles():
             if self.role_class == role_class.get_class_name():
                 return
         raise ValidationError(

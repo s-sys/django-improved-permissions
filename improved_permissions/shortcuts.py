@@ -18,7 +18,7 @@ def has_role(user, role_class, obj=None):
     query = RolePermission.objects.filter(role_class=role.get_class_name(), user=user)
 
     if role.is_my_model(obj):
-        # Example: If "user" is an "Author " of "Book A".
+        # Example: If "user" is an "Author" of "Book A".
         ct_obj = ContentType.objects.get_for_model(obj)
         query.filter(content_type=ct_obj.id, object_id=obj.id)
 
@@ -74,7 +74,7 @@ def assign_roles(users_list, role_class, obj=None):
     role = get_roleclass(role_class)
     models = role.get_models()
 
-    # If no object is provided but the role needs specific Models.
+    # If no object is provided but the role needs specific models.
     if not obj and role.models != ALL_MODELS:
         raise exceptions.InvalidRoleAssignment()
 
@@ -82,14 +82,18 @@ def assign_roles(users_list, role_class, obj=None):
     if obj and role.models == ALL_MODELS:
         raise exceptions.InvalidRoleAssignment()
 
-    # If a object is provided but the role doesnt register for object model.
+    # If a object is provided but the role does not register for THAT specific model.
     if obj._meta.model not in models:
         raise exceptions.InvalidRoleAssignment()
 
-    # If the role is marked as unique but already has an user attached.
     if role.unique is True:
+        # If the role is marked as unique but multiple users is provided.
+        if len(users_list) > 1:
+            raise exceptions.InvalidRoleAssignment()
+
+        # If the role is marked as unique but already has an user attached.
         has_user = get_users_by_role(role, obj)
-        if has_user or len(users_list) > 1:
+        if has_user:
             raise exceptions.InvalidRoleAssignment()
 
     perms_list = list()
@@ -103,8 +107,14 @@ def assign_roles(users_list, role_class, obj=None):
 
 
 def has_permission(user, permission, obj=None):
+    """
+    TODO
+    """
     return False
 
 
 def get_users_by_permission(permission, obj=None):
+    """
+    TODO
+    """
     return list()

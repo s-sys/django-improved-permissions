@@ -93,8 +93,14 @@ class RoleManager(object):
                                        'class "{name}".'.format(name=name))
 
         # Ensuring that "unique" exists.
+        # Default: False
         if not hasattr(new_class, 'unique') or not isinstance(new_class.unique, bool):
             new_class.unique = False
+
+        # Ensuring that "inherit" exists.
+        # Default: True
+        if not hasattr(new_class, 'inherit') or not isinstance(new_class.inherit, bool):
+            new_class.inherit = True
 
 
 class Role(object):
