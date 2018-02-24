@@ -31,14 +31,25 @@ class RoleManager(object):
         in the project.
         """
         from improved_permissions.utils import is_role
+
+        # Check if is actually a role class.
         if not is_role(new_class):
             raise ImproperlyConfigured('"{object}" is not a class inherited '
                                        'from Role.'.format(object=str(new_class)))
 
-        if new_class in cls.__ROLE_CLASSES_LIST:
-            name = new_class.get_class_name()
-            raise ImproperlyConfigured('"{name}" class was already registered '
-                                       'a valid Role class.'.format(name=name))
+        # Looking for name conflits or if this
+        # class was already registered before.
+        new_name = new_class.get_class_name()
+        for current_class in cls.__ROLE_CLASSES_LIST:
+            current_name = current_class.get_class_name()
+            if current_class == new_class:
+                raise ImproperlyConfigured('"{name}" was already registered as '
+                                           'a valid Role class.'.format(name=new_name))
+            elif current_name == new_name:
+                raise ImproperlyConfigured('"Another role was already defined using '
+                                           '"{name}". Choose another name for this R'
+                                           'ole class.'.format(name=current_name))
+
         cls.__validate(new_class)
         cls.__ROLE_CLASSES_LIST.append(new_class)
 
@@ -144,8 +155,6 @@ class Role(object):
     @classmethod
     def is_my_model(cls, model):
         cls.__protect()
-        if not isinstance(model, DJANGO_MODEL):
-            raise ImproperlyConfigured('The argument is not a Django model.')
         return model._meta.model in cls.get_models()
 
 

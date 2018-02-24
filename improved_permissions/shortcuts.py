@@ -17,7 +17,7 @@ def has_role(user, role_class, obj=None):
     role = get_roleclass(role_class)
     query = RolePermission.objects.filter(role_class=role.get_class_name(), user=user)
 
-    if role.is_my_model(obj):
+    if obj and role.is_my_model(obj):
         # Example: If "user" is an "Author" of "Book A".
         ct_obj = ContentType.objects.get_for_model(obj)
         query.filter(content_type=ct_obj.id, object_id=obj.id)
@@ -36,22 +36,24 @@ def get_users_by_role(role_class, obj=None):
     """
     role = get_roleclass(role_class)
     query = RolePermission.objects.filter(role_class=role.get_class_name())
-
-    if role.is_my_model(obj):
-        # Example: Get all "Author"s from "Book A".
+    
+    if not obj and role.models == ALL_MODELS:
+        # Example: Get all "Coordenators" (non-object roles).
+        query = query.filter(content_type__isnull=True, object_id__isnull=True)
+        print('3')
+    elif obj and role.is_my_model(obj):
+        # Example: Get all "Authors" from "Book A".
         ct_obj = ContentType.objects.get_for_model(obj)
-        query.filter(content_type=ct_obj.id, object_id=obj.id)
-
-    elif not obj and role.models == ALL_MODELS:
-        # Example: Get all Coordenators (non-object attached roles).
-        query.filter(content_type__isnull=True, object_id__isnull=True)
-
-    elif obj == ALL_MODELS:
-        # Example: Get all "Author"s from all "Books".
-        pass
+        query = query.filter(content_type=ct_obj.id, object_id=obj.id)
+        print('2')
     else:
-        # Wrong combination of arguments.
-        raise exceptions.BadRoleArguments()
+        print('1')
+        # Example: Get all "Authors" from all "Books".
+        # Its possible to have duplicates in
+        # this case, so we apply distinct here.
+        query = query.distinct()
+
+    print(query)
 
     # QuerySet to users list.
     return [rp.user for rp in query]
@@ -83,7 +85,7 @@ def assign_roles(users_list, role_class, obj=None):
         raise exceptions.InvalidRoleAssignment()
 
     # If a object is provided but the role does not register for THAT specific model.
-    if obj._meta.model not in models:
+    if obj and obj._meta.model not in models:
         raise exceptions.InvalidRoleAssignment()
 
     if role.unique is True:
