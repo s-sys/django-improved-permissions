@@ -25,14 +25,14 @@ class RolePermission(models.Model):
 
     role_class = models.CharField(max_length=256)
 
-    _role_object_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, blank=True, null=True)
-    _role_object_id = models.PositiveIntegerField(blank=True, null=True)
-    obj = GenericForeignKey(ct_field='_role_object_type', fk_field='_role_object_id')
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
+    object_id = models.PositiveIntegerField(null=True)
+    obj = GenericForeignKey()
 
     class Meta:
         verbose_name = 'Role Instance'
         verbose_name_plural = 'Role Instances'
-        unique_together = ('user', 'role_class', '_role_object_type', '_role_object_id')
+        unique_together = ('user', 'role_class', 'content_type', 'object_id')
 
     def __str__(self):
         role = get_roleclass(self.role_class)

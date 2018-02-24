@@ -7,6 +7,10 @@ class ModelNotDefined(Exception):
     pass
 
 
+class ParentNotFound(Exception):
+    pass
+
+
 class RoleNotFound(Exception):
     pass
 
@@ -16,4 +20,8 @@ class InvalidRoleAssignment(Exception):
 
 
 class BadRoleArguments(Exception):
+    pass
+
+
+class NotAllowed(Exception):
     pass
