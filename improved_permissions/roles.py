@@ -1,7 +1,10 @@
 """definition of role"""
+import inspect
+
 from django.apps import apps
-from django.core.exceptions import ImproperlyConfigured
-from django.db import models
+from django.db.models import Model as DJANGO_MODEL
+
+from improved_permissions.exceptions import ImproperlyConfigured
 
 ALL_MODELS = -1
 
@@ -19,7 +22,61 @@ class Role(object):
     _ROLE_CLASSES_LIST = list()
 
     def __new__(cls, *args, **kwargs):  # pylint: disable=unused-argument
-        raise AssertionError("Role classes must not be instantiated.")
+        raise ImproperlyConfigured('Role classes must not be instantiated.')
+
+    """
+    PARENT ROLE ONLY HELPER METHODS
+    """
+
+    @classmethod
+    def parent(cls):
+        if cls != Role:
+            raise ImproperlyConfigured('Only the Role class is all'
+                                       'owed to call this method.')
+
+    @classmethod
+    def register_role(cls, new_class):
+        cls.parent()
+        if new_class in cls._ROLE_CLASSES_LIST:
+            raise ImproperlyConfigured('"{}" class was already registered a valid '
+                                       'Role class.'.format(new_class.get_class_name()))
+        new_class.validate()
+        cls._ROLE_CLASSES_LIST += new_class
+
+    @classmethod
+    def get_roles(cls):
+        cls.parent()
+        return list(cls._ROLE_CLASSES_LIST)
+
+
+    """
+    ALL ROLE CLASSES HELPER METHODS
+    """
+
+    @classmethod
+    def validate(cls):
+        """
+        Check if all attributes needed
+        was properly defined.
+        """
+
+        # Check for "verbose_name" declaration.
+        if not hasattr(cls, 'verbose_name'):
+            raise ImproperlyConfigured('Provide a "verbose_name" declaration to '
+                                       'the Role class "{}".'.format(cls.__name__))
+
+        # Check if "models" is a valid list of Django models.
+        if hasattr(cls, 'models') and isinstance(cls.models, list):
+            check = True
+            for model in cls.models:
+                if not inspect.isclass(model) or not issubclass(model, DJANGO_MODEL):
+                    check = False
+                    break
+            if check:
+                return
+        raise ImproperlyConfigured('Provide a list of Models classes via '
+                                   'declaration of "models" to the Role '
+                                   'class "{}".'.format(cls.__name__))
 
     @classmethod
     def get_class_name(cls):
@@ -27,28 +84,16 @@ class Role(object):
 
     @classmethod
     def get_verbose_name(cls):
-        if hasattr(cls, 'verbose_name'):
-            return str(cls.verbose_name)
-        raise ImproperlyConfigured('Provide a "verbose_name" to the '
-                                   'role class "{}".'.format(cls.__name__))
-
-    @classmethod
-    def get_roles(cls):
-        return list(cls._ROLE_CLASSES_LIST)
+        return str(cls.verbose_name)
 
     @classmethod
     def get_models(cls):
+        ref = list()
         if isinstance(cls.models, list):
-            models_list = list()
-            for model in cls.models:
-                if issubclass(model, models.Model):
-                    models_list.append(model)
-            if cls.models == models_list:
-                return cls.models
+            ref = list(cls.models)
         elif cls.models == ALL_MODELS:
-            return apps.get_models()  # all models known by Django
-
-        raise ImproperlyConfigured('Provide a list of Model classes via "models".')
+            ref = list(apps.get_models())  # All models known by Django.
+        return ref
 
     @classmethod
     def is_my_model(cls, model):
@@ -62,3 +107,4 @@ class SuperUser(Role):
     verbose_name = 'Super User Role'
     models = ALL_MODELS
     inherit = True
+    exclude = []

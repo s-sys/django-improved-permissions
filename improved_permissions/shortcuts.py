@@ -2,7 +2,7 @@
 from improved_permissions import exceptions
 from improved_permissions.models import RolePermission
 from improved_permissions.roles import ALL_MODELS
-from improved_permissions.utils import get_roleclass_by_name
+from improved_permissions.utils import get_roleclass
 
 
 def has_role(user, role_class, obj=None):
@@ -14,8 +14,16 @@ def has_permission(user, permission, obj=None):
 
 
 def get_users_by_role(role_class, obj=None):
-    role = get_roleclass_by_name(role_class)
-    query = RolePermission.objects.filter(role_class=role)
+    """
+    Return the a list of Users instances
+    based on the Role class provided
+    by "role_class".
+
+    If "obj" is provided, get the Users
+    who has the Role class and the object.
+    """
+    role = get_roleclass(role_class)
+    query = RolePermission.objects.filter(role_class=role.get_class_name())
     if role.is_my_model(obj):  # get all authors from Book A
         query.filter(obj=obj)
     elif not obj and role.models == ALL_MODELS:  # get all "super" users (non object related roles)
@@ -37,7 +45,10 @@ def assign_role(user, role_class, obj=None):
 
 
 def assign_roles(users_list, role_class, obj=None):
-    role = get_roleclass_by_name(role_class)
+    """
+    assign_roles
+    """
+    role = get_roleclass(role_class)
     models = role.get_models()
 
     if not obj and role.models != ALL_MODELS:
@@ -50,7 +61,7 @@ def assign_roles(users_list, role_class, obj=None):
         raise exceptions.InvalidRoleAssignment()
 
     if obj and role.models == ALL_MODELS:
-        obj = 
+        obj = 1
 
     perms_list = list()
     users_set = set(users_list)

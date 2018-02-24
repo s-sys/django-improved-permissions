@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from improved_permissions.roles import Role
-from improved_permissions.utils import get_roleclass_by_name
+from improved_permissions.utils import get_roleclass
 
 
 class RolePermission(models.Model):
@@ -30,12 +30,12 @@ class RolePermission(models.Model):
     obj = GenericForeignKey(ct_field='_role_object_type', fk_field='_role_object_id')
 
     class Meta:
-        verbose_name = "Role Instance"
-        verbose_name_plural = "Role Instances"
+        verbose_name = 'Role Instance'
+        verbose_name_plural = 'Role Instances'
         unique_together = ('user', 'role_class', '_role_object_type', '_role_object_id')
 
     def __str__(self):
-        role = get_roleclass_by_name(self.role_class)
+        role = get_roleclass(self.role_class)
         output = '{user} as {role}'.format(user=self.user, role=role.get_verbose_name())
         if self.obj:
             output += ' in {obj}'.format(obj=self.obj)
@@ -45,7 +45,9 @@ class RolePermission(models.Model):
         for role_class in Role.get_roles():
             if self.role_class == role_class.get_class_name():
                 return
-        raise ValidationError({'role_class': 'This string representation does not exist as a Role class.'})
+        raise ValidationError(
+            {'role_class': 'This string representation does not exist as a Role class.'}
+        )
 
     def save(self, *args, **kwargs):  # pylint: disable=arguments-differ,unused-argument
         self.clean()

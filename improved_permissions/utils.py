@@ -16,15 +16,21 @@ def is_role(cls):
     return inspect.isclass(cls) and issubclass(cls, Role) and cls != Role
 
 
-def get_roleclass_by_name(role_class):
+def get_roleclass(role_class):
     """
-    Get the role in string mode and
-    return the Class associated to it.
+    Get the role class signature
+    by string or by itself.
     """
+    if issubclass(role_class, Role):
+        # Already a Role class.
+        return role_class
 
-    for role in Role.get_roles():
-        if role.get_class_name() == role_class:
-            return role
+    elif isinstance(role_class, str):
+        # Trying to get via string.
+        for role in Role.get_roles():
+            if role.get_class_name() == role_class:
+                return role
+
     raise exceptions.RoleNotFound()
 
 
