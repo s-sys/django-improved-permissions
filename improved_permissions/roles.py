@@ -2,7 +2,6 @@
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models.base import ModelBase
 
-
 ALL_MODELS = -1
 
 

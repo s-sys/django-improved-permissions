@@ -2,6 +2,7 @@ from django.db import models
 
 from testapp2.models import Library
 
+
 class Book(models.Model):
     title = models.CharField(max_length=256)
     description = models.TextField()
