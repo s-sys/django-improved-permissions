@@ -11,6 +11,10 @@ class ParentNotFound(Exception):
     pass
 
 
+class PermissionNotFound(Exception):
+    pass
+
+
 class RoleNotFound(Exception):
     pass
 

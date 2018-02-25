@@ -5,6 +5,7 @@ from django.apps import apps
 from django.db.models import Model as DJANGO_MODEL
 
 from improved_permissions.exceptions import ImproperlyConfigured
+from improved_permissions.utils import get_permissions_list
 
 ALL_MODELS = -1
 
@@ -113,6 +114,15 @@ class RoleManager(object):
         if not hasattr(new_class, 'inherit') or not isinstance(new_class.inherit, bool):
             new_class.inherit = True
 
+        # Ensuring that "include" exists.
+        # Default: []
+        if not hasattr(new_class, 'include') or not isinstance(new_class.include, list):
+            new_class.include = []
+
+        # Ensuring that "exclude" exists.
+        # Default: []
+        if not hasattr(new_class, 'exclude') or not isinstance(new_class.exclude, list):
+            new_class.exclude = []
 
 class Role(object):
     """
@@ -157,6 +167,19 @@ class Role(object):
         cls.__protect()
         return model._meta.model in cls.get_models()
 
+    @classmethod
+    def get_permissions(cls):
+        cls.__protect()
+        perms_list = list()
+
+        for model in cls.get_models():
+            perms_list += get_permissions_list(model)
+
+        perms_list = set(perms_list) | set(cls.include)
+        perms_list = set(perms_list) - set(cls.exclude)
+
+        return list(perms_list)
+
 
 class SuperUser(Role):
     """
@@ -165,4 +188,3 @@ class SuperUser(Role):
     verbose_name = 'Super User Role'
     models = ALL_MODELS
     inherit = True
-    exclude = []

@@ -52,3 +52,27 @@ class RolePermission(models.Model):
     def save(self, *args, **kwargs):  # pylint: disable=arguments-differ,unused-argument
         self.clean()
         super().save()
+
+
+class SpecificPermission(models.Model):
+    """
+    SpecificPermission
+
+    This model rocks too.
+    """
+    PERMISSION_CHOICES = (
+        (True, 'Allow'),
+        (False, 'Deny')
+    )
+    access = models.BooleanField(choices=PERMISSION_CHOICES)
+    permission = models.CharField(max_length=64)
+    role = models.ForeignKey(
+        RolePermission,
+        on_delete=models.CASCADE,
+        related_name='specifics'
+    )
+
+    class Meta:
+        verbose_name = 'Specific Permission'
+        verbose_name_plural = 'Specific Permissions'
+        unique_together = ('permission', 'role')

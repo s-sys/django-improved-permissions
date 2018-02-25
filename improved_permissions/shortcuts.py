@@ -2,9 +2,9 @@
 from django.contrib.contenttypes.models import ContentType
 
 from improved_permissions import exceptions
-from improved_permissions.models import RolePermission
+from improved_permissions.models import RolePermission, SpecificPermission
 from improved_permissions.roles import ALL_MODELS
-from improved_permissions.utils import get_roleclass
+from improved_permissions.utils import get_permissions_list, get_roleclass
 
 
 def has_role(user, role_class, obj=None):
@@ -36,24 +36,23 @@ def get_users_by_role(role_class, obj=None):
     """
     role = get_roleclass(role_class)
     query = RolePermission.objects.filter(role_class=role.get_class_name())
-    
+
     if not obj and role.models == ALL_MODELS:
         # Example: Get all "Coordenators" (non-object roles).
         query = query.filter(content_type__isnull=True, object_id__isnull=True)
-        print('3')
     elif obj and role.is_my_model(obj):
         # Example: Get all "Authors" from "Book A".
         ct_obj = ContentType.objects.get_for_model(obj)
         query = query.filter(content_type=ct_obj.id, object_id=obj.id)
-        print('2')
     else:
-        print('1')
         # Example: Get all "Authors" from all "Books".
         # Its possible to have duplicates in
         # this case, so we apply distinct here.
-        query = query.distinct()
-
-    print(query)
+        # PostgreSQL only
+        # query = query.distinct('user')
+        # TODO
+        return list(set([rp.user for rp in query]))
+        # TODO
 
     # QuerySet to users list.
     return [rp.user for rp in query]
@@ -110,8 +109,45 @@ def assign_roles(users_list, role_class, obj=None):
 
 def has_permission(user, permission, obj=None):
     """
-    TODO
+    Return True if the "user" has the "permission".
     """
+    if obj:
+        # First, we check if the permission provided
+        # is reachable by the object inheriting
+        # possible permissions from your parents.
+        perms_models = get_permissions_list(obj, True)
+        if permission not in perms_models:
+            raise exceptions.PermissionNotFound()
+
+        # Gathering all roles from the "user" with
+        # relation with "obj".
+        ct_obj = ContentType.objects.get_for_model(obj)
+        roles_list = (RolePermission.objects
+                      .filter(content_type=ct_obj.id)
+                      .filter(object_id=obj.id)
+                      .filter(user=user))
+
+        for role_obj in roles_list:
+            # Looking if exists a specific permission.
+            specific = SpecificPermission.objects.filter(role=role_obj, permission=permission).first()
+            if specific:
+                # If has a specific permission,
+                # the value of "access" override
+                # all role class declarations.
+                return specific.access
+
+            # Gathering all permissions from role class.
+            role = get_roleclass(role_obj.role_class)
+            perms_list = role.filter_permissions()
+            if permission in perms_list:
+                return True
+        else:
+            pass
+            # aqui
+    else:
+        pass
+        # get non-object permissions
+
     return False
 
 

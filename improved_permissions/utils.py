@@ -2,7 +2,6 @@
 import inspect
 
 from improved_permissions import exceptions
-from improved_permissions.roles import Role, RoleManager
 
 
 def is_role(role_class):
@@ -10,6 +9,7 @@ def is_role(role_class):
     Check if the argument is a valid Role class.
     This method DOES NOT check if the class is registered in RoleManager.
     """
+    from improved_permissions.roles import Role
     return inspect.isclass(role_class) and issubclass(role_class, Role) and role_class != Role
 
 
@@ -18,6 +18,7 @@ def get_roleclass(role_class):
     Get the role class signature
     by string or by itself.
     """
+    from improved_permissions.roles import RoleManager
     roles_list = RoleManager.get_roles()
     if role_class in roles_list:
         # Already a Role class.
@@ -32,69 +33,43 @@ def get_roleclass(role_class):
     raise exceptions.RoleNotFound()
 
 
-def get_permissions_list(model_instance):
+def get_permissions_list(model_instance, inherit=False):
     """
     Get the list of permissions explicit
     declared in the class Permissions.
-
-    Example:
-    --
-    class Project(models.Model):
-        title = models.CharField(max_length=256)
-        my_program = models.ForeignKey(Program)
-
-        class Meta:
-            verbose_name = "Project"
-
-        class Permissions:
-            permissions = ('view_project',)
-    --
-
-    Result (strings): ['view_project']
     """
-    if hasattr(model_instance, 'Permissions'):
-        perm_class = model_instance.Permissions
-        if hasattr(perm_class, 'permissions'):
-            return perm_class.permissions
-    raise exceptions.ModelNotDefined()
+    perms_list = list()
+    models_stack = list()
+    models_stack.append(model_instance)
 
+    # -----
+    # Start the Breath-First Search for permissions.
+    # https://en.wikipedia.org/wiki/Breadth-first_search
+    # -----
+    while models_stack:
+        model = models_stack.pop(0) # pop head of the stack.
+        
+        if hasattr(model, 'Permissions'):
+            perm_class = model.Permissions
 
-def get_permissions_parents(model_instance):
-    """
-    Get the list of objects declared as 'parents'
-    of a given Model instance.
+            # Search for permissions and
+            # append the items in "perms_list".
+            if hasattr(perm_class, 'permissions'):
+                perms_list += perm_class.permissions
 
-    In other words, these fields' models inherit
-    all permissions declared in this Model class.
+            # If inherit = False, the BFS
+            # actually perform only one loop.
+            if not inherit:
+                break
 
-    Example:
-    --
-    class Program(models.Model):
-        title = models.CharField(max_length=256)
-
-    class Project(models.Model):
-        title = models.CharField(max_length=256)
-        my_program = models.ForeignKey(Program)
-
-        class Meta:
-            verbose_name = "Project"
-
-        class Permissions:
-            permissions = ('view_project',)
-            permission_parents = ['my_program']
-    --
-
-    Result (instances): [my_program]
-    """
-    if hasattr(model_instance, 'Permissions'):
-        perm_class = model_instance.Permissions
-        if hasattr(perm_class, 'permission_parents'):
-            objects = list()
-            parents_list = perm_class.permission_parents
-            for parent in parents_list:
-                if hasattr(model_instance, parent):
-                    objects.append(getattr(model_instance, parent))
-                else:
-                    raise exceptions.ParentNotFound()
-            return objects
-    raise exceptions.ModelNotDefined()
+            # Now, we verify if any field of the model
+            # was marked as "parent" in order to inherit
+            # their permissions.
+            if hasattr(perm_class, 'permission_parents'):
+                parents_list = perm_class.permission_parents
+                for parent in parents_list:
+                    if hasattr(model, parent):
+                        models_stack.append(getattr(model, parent))
+                    else:
+                        raise exceptions.ParentNotFound()
+    return perms_list

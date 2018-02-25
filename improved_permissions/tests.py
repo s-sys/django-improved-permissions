@@ -6,7 +6,7 @@ from improved_permissions import (ALL_MODELS, Role, RoleManager, exceptions,
                                   utils)
 from improved_permissions.models import RolePermission
 from improved_permissions.shortcuts import (assign_role, assign_roles,
-                                            get_users_by_role, has_role)
+                                            get_users_by_role, has_role, has_permission)
 
 
 class NoVerboseNameRole(Role):
@@ -30,10 +30,12 @@ class Advisor(Role):
 
 class Teacher(Role):
     verbose_name = "Teacher"
+    include = ['auth.give_lectures', 'auth.give_grades']
     models = [User]
 
 class Coordenator(Role):
     verbose_name = "Coordenator"
+    include = ['auth.assign_activities']
     models = ALL_MODELS
 
 
@@ -123,7 +125,7 @@ class ShortcutsTest(TestCase):
         # Trying to add the role again using a Role with unique=True
         with self.assertRaises(exceptions.InvalidRoleAssignment):
             assign_role(self.mike, Advisor, self.julie)
-        
+
         users_list = get_users_by_role(Advisor)
         self.assertEqual(users_list, [self.john])
 
@@ -131,3 +133,9 @@ class ShortcutsTest(TestCase):
         """ test if has_role method works fine """
         assign_role(self.john, Coordenator)
         self.assertTrue(has_role(self.john, Coordenator))
+
+    def test_has_permission(self):
+        """ test if the has_permission method works fine """
+        assign_role(self.john, Teacher, self.bob)
+
+        self.assertTrue(has_permission(self.john, 'auth.give_lectures', self.bob))
