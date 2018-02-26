@@ -201,18 +201,28 @@ class ShortcutsTest(TestCase):
     def test_assign_permissions(self):
         """ test if the permissions assignment works fine """
 
-        # Assign the role and try to use a permission denied by default
+        # Assign the role and try to use a permission denied by default.
         assign_role(self.john, Teacher, self.bob)
+        assign_role(self.john, Teacher, self.julie)
         self.assertFalse(has_permission(self.john, 'auth.delete_user', self.bob))
+        self.assertFalse(has_permission(self.john, 'auth.delete_user', self.julie))
 
-        # Assign the permission explicitly True value
+        # Explicitly assign the permission using access=True and the object.
         assign_permission(self.john, Teacher, 'auth.delete_user', True, self.bob)
+
+        # Result: Only the specified object was affected.
         self.assertTrue(has_permission(self.john, 'auth.delete_user', self.bob))
+        self.assertFalse(has_permission(self.john, 'auth.delete_user', self.julie))
 
         # Assign the role and try to use a permission allowed by default
         assign_role(self.mike, Teacher, self.bob)
+        assign_role(self.mike, Teacher, self.julie)
         self.assertTrue(has_permission(self.mike, 'auth.add_user', self.bob))
+        self.assertTrue(has_permission(self.mike, 'auth.add_user', self.julie))
 
-        # Assign the permission explicitly False value
+        # Explicitly assign the permission using access=False but without an object.
         assign_permission(self.mike, Teacher, 'auth.add_user', False)
+
+        # Result: All the user's role instances were affected
         self.assertFalse(has_permission(self.mike, 'auth.add_user', self.bob))
+        self.assertFalse(has_permission(self.mike, 'auth.add_user', self.julie))
