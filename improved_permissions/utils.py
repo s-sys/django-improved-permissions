@@ -13,6 +13,40 @@ def is_role(role_class):
     return inspect.isclass(role_class) and issubclass(role_class, Role) and role_class != Role
 
 
+def autodiscover():
+    """
+    Find for Role class implementations
+    on all apps in order to auto-register.
+    """
+    from importlib import import_module
+    from django.conf import settings
+    from improved_permissions.roles import RoleManager
+
+    try:
+        # Check if the Permission model
+        # is ready to be used.
+        from django.contrib.auth.models import Permission
+        from django.db.utils import OperationalError
+        Permission.objects.count()
+    except OperationalError:
+        return
+
+    # If any role was registered already,
+    # do not perform the autodiscover.
+    if RoleManager.get_roles():
+        return
+
+    # Looking for Role classes in "roles.py".
+    for app_name in settings.INSTALLED_APPS:
+        try:
+            mod = import_module('{app}.roles'.format(app=app_name))
+            rc_list = [obj[1] for obj in inspect.getmembers(mod, is_role)]
+            for roleclass in rc_list:
+                RoleManager.register_role(roleclass)
+        except ImportError:
+            pass
+
+
 def get_roleclass(role_class):
     """
     Get the role class signature

@@ -1,21 +1,23 @@
+""" testapp1 models """
 from django.db import models
 
+from improved_permissions.mixins import RoleMixin
 from testapp2.models import Library
 
 
-class Book(models.Model):
+class Book(RoleMixin, models.Model):
     title = models.CharField(max_length=256)
     description = models.TextField()
     library = models.ForeignKey(Library, on_delete=models.PROTECT)
 
     class Meta:
-        permissions = [('view_book', 'Visualizar Livro'),]
+        permissions = [('view_book', 'Visualizar Livro'), ('review', 'Revisar'),]
 
     class RoleOptions:
         permission_parents = ['library']
 
 
-class Chapter(models.Model):
+class Chapter(RoleMixin, models.Model):
     title = models.CharField(max_length=256)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
 
@@ -26,7 +28,7 @@ class Chapter(models.Model):
         permission_parents = ['book']
 
 
-class Paragraph(models.Model):
+class Paragraph(RoleMixin, models.Model):
     chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE)
     content = models.TextField()
 
