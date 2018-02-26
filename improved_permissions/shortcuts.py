@@ -102,6 +102,7 @@ def assign_roles(users_list, role_class, obj=None):
     user.
     """
     role = get_roleclass(role_class)
+    name = role.get_verbose_name()
     models = role.get_models()
 
     # If no object is provided but the role needs specific models.
@@ -114,7 +115,8 @@ def assign_roles(users_list, role_class, obj=None):
 
     # If a object is provided but the role does not register for THAT specific model.
     if obj and obj._meta.model not in models:
-        raise InvalidRoleAssignment()
+        raise InvalidRoleAssignment('The model "%s" does not belong to '
+                                    'the Role "%s"' % (obj._meta.verbose_name, name))
 
     if role.unique is True:
         # If the role is marked as unique but multiple users is provided.
@@ -179,8 +181,8 @@ def has_permission(user, permission, obj=None):
 
             for role_obj in roles_list:
                 # Common search for the permission object
-                perm_access = RolePermission.objects.get(role=role_obj, permission=perm_obj)
-                if perm_access.access is True:
+                perm_access = RolePermission.objects.filter(role=role_obj, permission=perm_obj).first()
+                if perm_access and perm_access.access is True:
                     return True
 
                 if current_obj != obj:

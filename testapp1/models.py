@@ -7,7 +7,6 @@ from testapp2.models import Library
 
 class Book(RoleMixin, models.Model):
     title = models.CharField(max_length=256)
-    description = models.TextField()
     library = models.ForeignKey(Library, on_delete=models.PROTECT)
 
     class Meta:

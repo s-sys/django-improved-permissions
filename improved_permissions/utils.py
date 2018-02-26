@@ -130,19 +130,17 @@ def inherit_check(role_obj, permission):
     Check if the role class has the following
     permission in inherit mode.
     """
-    from improved_permissions import ALL_MODELS, ALLOW_MODE
+    from improved_permissions import ALLOW_MODE
 
     role = get_roleclass(role_obj.role_class)
     if role.inherit is True:
         if role.get_inherit_mode() == ALLOW_MODE:
             if permission in role.inherit_allow:
                 return True, True
-            elif role.models == ALL_MODELS:
-                return True, False
+            return True, False
         else:
             if permission in role.inherit_deny:
                 return True, False
-            elif role.models == ALL_MODELS:
-                return True, True
+            return True, True
 
     return False, False
