@@ -45,6 +45,12 @@ class Secretary(Role):
     allow = ['auth.delete_user']
 
 
+class SubCoordenator(Role):
+    verbose_name = "SubCoordenator"
+    models = ALL_MODELS
+    inherit_allow = ['auth.change_user']
+
+
 class Coordenator(Role):
     verbose_name = "Coordenator"
     models = ALL_MODELS
@@ -104,8 +110,9 @@ class ShortcutsTest(TestCase):
         RoleManager.cleanup()
         RoleManager.register_role(Advisor)
         RoleManager.register_role(Teacher)
-        RoleManager.register_role(Coordenator)
         RoleManager.register_role(Secretary)
+        RoleManager.register_role(SubCoordenator)
+        RoleManager.register_role(Coordenator)
         self.john = User.objects.create(username="john")
         self.bob = User.objects.create(username="bob")
         self.mike = User.objects.create(username="mike")
@@ -157,11 +164,16 @@ class ShortcutsTest(TestCase):
         self.assertTrue(has_permission(self.john, 'auth.add_user', self.bob))
         self.assertFalse(has_permission(self.mike, 'auth.delete_user', self.bob))
 
+        assign_role(self.mike, Secretary, self.bob)
+        self.assertTrue(has_permission(self.mike, 'auth.delete_user', self.bob))
+        self.assertFalse(has_permission(self.mike, 'auth.add_user', self.bob))
+
+        assign_role(self.bob, SubCoordenator)
+        self.assertTrue(has_permission(self.bob, 'auth.change_user'))
+        self.assertTrue(has_permission(self.bob, 'auth.change_user', self.julie))
+        self.assertFalse(has_permission(self.bob, 'auth.add_user', self.julie))
+
         assign_role(self.julie, Coordenator)
         self.assertTrue(has_permission(self.julie, 'auth.add_user'))
         self.assertTrue(has_permission(self.julie, 'auth.add_user', self.bob))
         self.assertFalse(has_permission(self.julie, 'auth.change_user', self.bob))
-
-        assign_role(self.mike, Secretary, self.bob)
-        self.assertTrue(has_permission(self.mike, 'auth.delete_user', self.bob))
-        self.assertFalse(has_permission(self.mike, 'auth.add_user', self.bob))
