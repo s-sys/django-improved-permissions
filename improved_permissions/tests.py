@@ -3,10 +3,10 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 
 from improved_permissions import ALL_MODELS, Role, RoleManager, exceptions
-from improved_permissions.shortcuts import (assign_role, assign_roles,
-                                            get_users_by_role, has_permission,
-                                            has_role, remove_role,
-                                            remove_roles, assign_permission)
+from improved_permissions.shortcuts import (assign_permission, assign_role,
+                                            assign_roles, get_users_by_role,
+                                            has_permission, has_role,
+                                            remove_role, remove_roles)
 
 
 class NoVerboseNameRole(Role):

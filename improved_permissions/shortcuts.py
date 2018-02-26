@@ -27,6 +27,32 @@ def has_role(user, role_class, obj=None):
     return query.count() > 0
 
 
+def get_users(obj=None):
+    """
+    Get the list of users who
+    has any role attached to it.
+    If "obj" is provided, the
+    role must be attached to obj
+    as well.
+    """
+    query = UserRole.objects.all()
+    if obj:
+        ct_obj = ContentType.objects.get_for_model(obj)
+        query = query.filter(content_type=ct_obj.id, object_id=obj.id).values('user', 'role_class')
+
+    result = list()
+    for role in query:
+        item = {
+            'user': role.user,
+            'role_class': get_roleclass(role.role_class)
+        }
+        if not obj:
+            item.update({'obj': role.obj})
+        result.append(item)
+
+    return result
+
+
 def get_users_by_role(role_class, obj=None):
     """
     Return the a list of Users instances
@@ -36,6 +62,7 @@ def get_users_by_role(role_class, obj=None):
     If "obj" is provided, get the Users
     who has the Role class and the object.
     """
+
     role = get_roleclass(role_class)
     query = UserRole.objects.filter(role_class=role.get_class_name())
 
@@ -209,6 +236,6 @@ def assign_permission(user, roles_class, permission, access, obj=None):
         raise InvalidPermissionAssignment('No Role instance was affected.')
 
     for role_obj in query:
-        perm_obj, created = RolePermission.objects.get_or_create(role=role_obj, permission=perm)
+        perm_obj, created = RolePermission.objects.get_or_create(role=role_obj, permission=perm)  # pylint: disable=W0612
         perm_obj.access = bool(access)
         perm_obj.save()
