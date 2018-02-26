@@ -124,12 +124,12 @@ def has_permission(user, permission, obj=None):
                           .filter(user=user))
 
             for role_obj in roles_list:
-                if current_obj == obj:
-                    # Common search for the permission object
-                    perm_access = RolePermission.objects.get(role=role_obj, permission=perm_obj)
-                    if perm_access.access is True:
-                        return True
-                else:
+                # Common search for the permission object
+                perm_access = RolePermission.objects.get(role=role_obj, permission=perm_obj)
+                if perm_access.access is True:
+                    return True
+
+                if current_obj != obj:
                     # Now, we are in inherit mode.
                     # We need to check if the Role
                     # allows the inherit.

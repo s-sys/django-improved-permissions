@@ -74,7 +74,7 @@ class RoleManager(object):
         cls.__ROLE_CLASSES_LIST = list()
 
     @classmethod
-    def __validate(cls, new_class):
+    def __validate(cls, new_class):  # pylint: disable=too-many-branches
         """
         Check if all attributes needed
         was properly defined in the
@@ -101,6 +101,9 @@ class RoleManager(object):
             elif new_class.models == ALL_MODELS:
                 # Role classes with ALL_MODELS autoimplies inherit=True.
                 new_class.inherit = True
+                new_class.MODE = DENY_MODE
+                new_class.allow = []
+                new_class.deny = []
             else:
                 models_isvalid = False
         else:
@@ -111,12 +114,12 @@ class RoleManager(object):
                                        'declaration of "models" to the Role '
                                        'class "{name}".'.format(name=name))
 
-        # Ensuring that "unique" exists.
-        # Default: False
-        if not hasattr(new_class, 'unique') or not isinstance(new_class.unique, bool):
-            new_class.unique = False
-
-        new_class.MODE = cls.__validate_allow_deny(new_class, 'allow', 'deny')
+        # Role classes with "models" = ALLMODELS
+        # does not use allow/deny. In this case,
+        # all permissions must be specified in
+        # "inherit_allow" and "inherit_deny".
+        if new_class.models != ALL_MODELS:
+            new_class.MODE = cls.__validate_allow_deny(new_class, 'allow', 'deny')
 
         # Ensuring that "inherit" exists.
         # Default: False
@@ -125,6 +128,11 @@ class RoleManager(object):
 
         if new_class.inherit is True:
             new_class.INHERIT_MODE = cls.__validate_allow_deny(new_class, 'inherit_allow', 'inherit_deny')
+
+        # Ensuring that "unique" exists.
+        # Default: False
+        if not hasattr(new_class, 'unique') or not isinstance(new_class.unique, bool):
+            new_class.unique = False
 
     @classmethod
     def __validate_allow_deny(cls, new_class, allow_field, deny_field):
