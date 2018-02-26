@@ -9,10 +9,4 @@ class ImprovedPermissionsConfig(AppConfig):
     verbose_name = 'Django Improved Permissions'
 
     def ready(self):
-        from django.contrib.auth.models import Permission
-        from django.db.utils import OperationalError
-        try:
-            Permission.objects.count()
-            autodiscover()
-        except OperationalError:
-            pass
+        autodiscover()
