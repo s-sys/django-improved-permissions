@@ -11,16 +11,20 @@ from improved_permissions.shortcuts import (assign_role, assign_roles,
 class NoVerboseNameRole(Role):
     pass
 
+
 class NoModelRole1(Role):
     verbose_name = "Role"
+
 
 class NoModelRole2(Role):
     verbose_name = "Role"
     models = None
 
+
 class NoModelRole3(Role):
     verbose_name = "Role"
     models = [1, 2]
+
 
 class Advisor(Role):
     verbose_name = "Advisor"
@@ -28,10 +32,18 @@ class Advisor(Role):
     unique = True
     deny = []
 
+
 class Teacher(Role):
     verbose_name = "Teacher"
     models = [User]
-    deny = []
+    deny = ['auth.delete_user']
+
+
+class Secretary(Role):
+    verbose_name = "Secretary"
+    models = [User]
+    allow = ['auth.delete_user']
+
 
 class Coordenator(Role):
     verbose_name = "Coordenator"
@@ -93,6 +105,7 @@ class ShortcutsTest(TestCase):
         RoleManager.register_role(Advisor)
         RoleManager.register_role(Teacher)
         RoleManager.register_role(Coordenator)
+        RoleManager.register_role(Secretary)
         self.john = User.objects.create(username="john")
         self.bob = User.objects.create(username="bob")
         self.mike = User.objects.create(username="mike")
@@ -112,6 +125,10 @@ class ShortcutsTest(TestCase):
         # Trying to assign a non-object role using a object
         with self.assertRaises(exceptions.InvalidRoleAssignment):
             assign_role(self.john, Coordenator, self.bob)
+
+        # Trying to assign a object role without object
+        with self.assertRaises(exceptions.InvalidRoleAssignment):
+            assign_role(self.john, Advisor)
 
     def test_assign_roles_unique(self):
         """ test if 'unique' attribute works fine """
@@ -138,8 +155,13 @@ class ShortcutsTest(TestCase):
         """ test if the has_permission method works fine """
         assign_role(self.john, Teacher, self.bob)
         self.assertTrue(has_permission(self.john, 'auth.add_user', self.bob))
+        self.assertFalse(has_permission(self.mike, 'auth.delete_user', self.bob))
 
         assign_role(self.julie, Coordenator)
         self.assertTrue(has_permission(self.julie, 'auth.add_user'))
         self.assertTrue(has_permission(self.julie, 'auth.add_user', self.bob))
         self.assertFalse(has_permission(self.julie, 'auth.change_user', self.bob))
+
+        assign_role(self.mike, Secretary, self.bob)
+        self.assertTrue(has_permission(self.mike, 'auth.delete_user', self.bob))
+        self.assertFalse(has_permission(self.mike, 'auth.add_user', self.bob))
