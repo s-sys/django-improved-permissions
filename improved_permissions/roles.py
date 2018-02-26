@@ -4,11 +4,13 @@ import inspect
 from django.apps import apps
 from django.db.models import Model as DJANGO_MODEL
 
-from improved_permissions.exceptions import ImproperlyConfigured
-from improved_permissions.utils import get_permissions_list
+from improved_permissions.exceptions import ImproperlyConfigured, NotAllowed
+from improved_permissions.utils import string_to_permission
+
+ALLOW_MODE = 0
+DENY_MODE = 1
 
 ALL_MODELS = -1
-
 
 class RoleManager(object):
     """
@@ -86,6 +88,8 @@ class RoleManager(object):
             raise ImproperlyConfigured('Provide a "verbose_name" declaration to the '
                                        'Role class "{name}".'.format(name=name))
 
+        name = new_class.get_verbose_name()
+
         # Check if "models" is a valid list of Django models or ALL_MODELS.
         models_isvalid = True
         if hasattr(new_class, 'models'):
@@ -94,7 +98,10 @@ class RoleManager(object):
                     if not inspect.isclass(model) or not issubclass(model, DJANGO_MODEL):
                         models_isvalid = False
                         break
-            elif new_class.models != ALL_MODELS:
+            elif new_class.models == ALL_MODELS:
+                # Role classes with ALL_MODELS autoimplies inherit=True.
+                new_class.inherit = True
+            else:
                 models_isvalid = False
         else:
             models_isvalid = False
@@ -109,20 +116,56 @@ class RoleManager(object):
         if not hasattr(new_class, 'unique') or not isinstance(new_class.unique, bool):
             new_class.unique = False
 
+        new_class.MODE = cls.__validate_allow_deny(new_class, 'allow', 'deny')
+
         # Ensuring that "inherit" exists.
-        # Default: True
+        # Default: False
         if not hasattr(new_class, 'inherit') or not isinstance(new_class.inherit, bool):
-            new_class.inherit = True
+            new_class.inherit = False
 
-        # Ensuring that "include" exists.
-        # Default: []
-        if not hasattr(new_class, 'include') or not isinstance(new_class.include, list):
-            new_class.include = []
+        if new_class.inherit is True:
+            new_class.INHERIT_MODE = cls.__validate_allow_deny(new_class, 'inherit_allow', 'inherit_deny')
 
-        # Ensuring that "exclude" exists.
-        # Default: []
-        if not hasattr(new_class, 'exclude') or not isinstance(new_class.exclude, list):
-            new_class.exclude = []
+    @classmethod
+    def __validate_allow_deny(cls, new_class, allow_field, deny_field):
+
+        name = new_class.get_verbose_name()
+
+        # Checking for "allow" and "deny" fields
+        c_allow = hasattr(new_class, allow_field)
+        c_deny = hasattr(new_class, deny_field)
+
+        # XOR operation.
+        if c_allow and c_deny or not c_allow and not c_deny:
+            raise ImproperlyConfigured('Provide either "{allow_field}" or '
+                                       '"{deny_field}" when inherit=True o'
+                                       'r models=ALL_MODELS for the Role "'
+                                       '{name}".'
+                                       .format(allow_field=allow_field,
+                                               deny_field=deny_field,
+                                               name=name)
+                                      )
+
+        if c_allow and isinstance(getattr(new_class, allow_field), list):
+            perms_list = getattr(new_class, allow_field)
+            result = ALLOW_MODE
+
+        elif c_deny and isinstance(getattr(new_class, deny_field), list):
+            perms_list = getattr(new_class, deny_field)
+            result = DENY_MODE
+
+        # Check if the permissions given via "inherit_allow"
+        # or "inherit_deny" exists in the Permission database.
+        from django.contrib.auth.models import Permission
+        for perm in perms_list:
+            try:
+                string_to_permission(perm)
+            except (AttributeError, Permission.DoesNotExist):
+                raise ImproperlyConfigured('"{perm}" does not exist '
+                                           'in the Permission databa'
+                                           'se.'.format(perm=perm))
+        # Return the mode.
+        return result
 
 class Role(object):
     """
@@ -153,6 +196,19 @@ class Role(object):
         return str(cls.verbose_name)
 
     @classmethod
+    def get_mode(cls):
+        cls.__protect()
+        return cls.MODE
+
+    @classmethod
+    def get_inherit_mode(cls):
+        cls.__protect()
+        if cls.inherit is True:
+            return cls.INHERIT_MODE
+        else:
+            raise NotAllowed()
+
+    @classmethod
     def get_models(cls):
         cls.__protect()
         ref = list()
@@ -167,19 +223,6 @@ class Role(object):
         cls.__protect()
         return model._meta.model in cls.get_models()
 
-    @classmethod
-    def get_permissions(cls):
-        cls.__protect()
-        perms_list = list()
-
-        for model in cls.get_models():
-            perms_list += get_permissions_list(model)
-
-        perms_list = set(perms_list) | set(cls.include)
-        perms_list = set(perms_list) - set(cls.exclude)
-
-        return list(perms_list)
-
 
 class SuperUser(Role):
     """
@@ -187,4 +230,5 @@ class SuperUser(Role):
     """
     verbose_name = 'Super User Role'
     models = ALL_MODELS
-    inherit = True
+    deny = []
+    inherit_deny = []

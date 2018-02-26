@@ -5,4 +5,4 @@ from testapp2.models import Library
 class LibraryOwner(roles.Role):
     verbose_name = 'Biblioterário'
     models = [Library]
-    inherit = True
+    deny = []

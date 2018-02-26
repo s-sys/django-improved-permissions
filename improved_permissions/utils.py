@@ -1,7 +1,7 @@
 """ permissions utils """
 import inspect
 
-from improved_permissions import exceptions
+from improved_permissions.exceptions import ParentNotFound, RoleNotFound
 
 
 def is_role(role_class):
@@ -30,46 +30,85 @@ def get_roleclass(role_class):
             if role.get_class_name() == role_class:
                 return role
 
-    raise exceptions.RoleNotFound()
+    raise RoleNotFound()
 
 
-def get_permissions_list(model_instance, inherit=False):
+def string_to_permission(perm):
     """
-    Get the list of permissions explicit
-    declared in the class Permissions.
+    Transforms a string representation
+    into a Permissin instance.
     """
-    perms_list = list()
-    models_stack = list()
-    models_stack.append(model_instance)
+    from django.contrib.auth.models import Permission
+    try:
+        app_label, codename = perm.split('.')
+    except (ValueError, IndexError):
+        raise AttributeError
+    return Permission.objects.get(content_type__app_label=app_label, codename=codename)
 
-    # -----
-    # Start the Breath-First Search for permissions.
-    # https://en.wikipedia.org/wiki/Breadth-first_search
-    # -----
-    while models_stack:
-        model = models_stack.pop(0) # pop head of the stack.
-        
-        if hasattr(model, 'Permissions'):
-            perm_class = model.Permissions
 
-            # Search for permissions and
-            # append the items in "perms_list".
-            if hasattr(perm_class, 'permissions'):
-                perms_list += perm_class.permissions
+def permission_to_string(perm):
+    """
+    Transforms a Permission instance
+    into a string representation.
+    """
+    app_label = perm.content_type.app_label
+    codename = perm.codename
+    return '%s.%s' % (app_label, codename)
 
-            # If inherit = False, the BFS
-            # actually perform only one loop.
-            if not inherit:
-                break
 
-            # Now, we verify if any field of the model
-            # was marked as "parent" in order to inherit
-            # their permissions.
-            if hasattr(perm_class, 'permission_parents'):
-                parents_list = perm_class.permission_parents
-                for parent in parents_list:
-                    if hasattr(model, parent):
-                        models_stack.append(getattr(model, parent))
-                    else:
-                        raise exceptions.ParentNotFound()
-    return perms_list
+def get_permissions_list(models_list):
+    """
+    Given a list of Model instances or a Model
+    classes, return all Permissions related to it.
+    """
+    from django.contrib.auth.models import Permission
+    from django.contrib.contenttypes.models import ContentType
+
+    if models_list is None:
+        return list()
+
+    ct_list = ContentType.objects.get_for_models(*models_list)
+    ct_ids = [ct.id for cls, ct in ct_list.items()]
+
+    return list(Permission.objects.filter(content_type_id__in=ct_ids))
+
+
+def get_parents(model):
+    """
+    Return the list of instances refered
+    as "parents" of a given model instance.
+    """
+    result = list()
+    if hasattr(model, 'RoleOptions'):
+        options = getattr(model, 'RoleOptions')
+        if hasattr(options, 'permission_parents'):
+            parents_list = getattr(options, 'permission_parents')
+            for parent in parents_list:
+                if hasattr(model, parent):
+                    result.append(getattr(model, parent))
+                else:
+                    raise ParentNotFound()
+    return result
+
+
+def inherit_check(role_obj, permission):
+    """
+    Check if the role class has the following
+    permission in inherit mode.
+    """
+    from improved_permissions import ALL_MODELS, ALLOW_MODE
+
+    role = get_roleclass(role_obj.role_class)
+    if role.inherit is True:
+        if role.get_inherit_mode() == ALLOW_MODE:
+            if permission in role.inherit_allow:
+                return True, True
+            elif role.models == ALL_MODELS:
+                return True, False
+        else:
+            if permission in role.inherit_deny:
+                return True, False
+            elif role.models == ALL_MODELS:
+                return True, True
+
+    return False, False

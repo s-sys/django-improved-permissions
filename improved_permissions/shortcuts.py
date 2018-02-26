@@ -1,10 +1,10 @@
 """ permissions shortcuts """
 from django.contrib.contenttypes.models import ContentType
 
-from improved_permissions import exceptions
-from improved_permissions.models import RolePermission, SpecificPermission
-from improved_permissions.roles import ALL_MODELS
-from improved_permissions.utils import get_permissions_list, get_roleclass
+from improved_permissions import ALL_MODELS, exceptions
+from improved_permissions.models import RolePermission, UserRole
+from improved_permissions.utils import (get_parents, get_roleclass,
+                                        inherit_check, string_to_permission)
 
 
 def has_role(user, role_class, obj=None):
@@ -15,7 +15,7 @@ def has_role(user, role_class, obj=None):
     refined to look only at that object.
     """
     role = get_roleclass(role_class)
-    query = RolePermission.objects.filter(role_class=role.get_class_name(), user=user)
+    query = UserRole.objects.filter(role_class=role.get_class_name(), user=user)
 
     if obj and role.is_my_model(obj):
         # Example: If "user" is an "Author" of "Book A".
@@ -35,7 +35,7 @@ def get_users_by_role(role_class, obj=None):
     who has the Role class and the object.
     """
     role = get_roleclass(role_class)
-    query = RolePermission.objects.filter(role_class=role.get_class_name())
+    query = UserRole.objects.filter(role_class=role.get_class_name())
 
     if not obj and role.models == ALL_MODELS:
         # Example: Get all "Coordenators" (non-object roles).
@@ -97,62 +97,69 @@ def assign_roles(users_list, role_class, obj=None):
         if has_user:
             raise exceptions.InvalidRoleAssignment()
 
-    perms_list = list()
     users_set = set(users_list)
     for user in users_set:
-        rp_instance = RolePermission(role_class=role.get_class_name(), user=user)
+        ur_instance = UserRole(role_class=role.get_class_name(), user=user)
         if obj:
-            rp_instance.obj = obj
-        perms_list.append(rp_instance)
-    RolePermission.objects.bulk_create(perms_list)
+            ur_instance.obj = obj
+        ur_instance.save()
 
 
 def has_permission(user, permission, obj=None):
     """
     Return True if the "user" has the "permission".
     """
-    if obj:
-        # First, we check if the permission provided
-        # is reachable by the object inheriting
-        # possible permissions from your parents.
-        perms_models = get_permissions_list(obj, True)
-        if permission not in perms_models:
-            raise exceptions.PermissionNotFound()
+    perm_obj = string_to_permission(permission)
 
-        # Gathering all roles from the "user" with
-        # relation with "obj".
-        ct_obj = ContentType.objects.get_for_model(obj)
-        roles_list = (RolePermission.objects
-                      .filter(content_type=ct_obj.id)
-                      .filter(object_id=obj.id)
+    if obj:  # pylint: disable=too-many-nested-blocks
+        stack = list()
+        stack.append(obj)
+        while stack:
+            # Getting the UserRole for the current object.
+            current_obj = stack.pop(0)
+            ct_obj = ContentType.objects.get_for_model(current_obj)
+            roles_list = (UserRole.objects
+                          .filter(object_id=current_obj.id)
+                          .filter(content_type=ct_obj.id)
+                          .filter(user=user))
+
+            for role_obj in roles_list:
+                if current_obj == obj:
+                    # Common search for the permission object
+                    perm_access = RolePermission.objects.get(role=role_obj, permission=perm_obj)
+                    if perm_access.access is True:
+                        return True
+                else:
+                    # Now, we are in inherit mode.
+                    # We need to check if the Role
+                    # allows the inherit.
+                    valid, result = inherit_check(role_obj, permission)
+                    if valid:
+                        return result
+
+            # If roles_list was empty or a deny
+            # was found, try to look even futher
+            # for possible parent fields.
+            if not roles_list:
+                parents_list = get_parents(current_obj)
+                for parent in parents_list:
+                    stack.append(parent)
+
+    # If nothing was found or the obj was
+    # not provided, try now for roles with
+    # "models" = ALL_MODELS.
+    allmodels_list = (UserRole.objects
+                      .filter(content_type__isnull=True)
+                      .filter(object_id__isnull=True)
                       .filter(user=user))
+    for role_obj in allmodels_list:
+        valid, result = inherit_check(role_obj, permission)
+        if valid:
+            return result
 
-        for role_obj in roles_list:
-            # Looking if exists a specific permission.
-            specific = SpecificPermission.objects.filter(role=role_obj, permission=permission).first()
-            if specific:
-                # If has a specific permission,
-                # the value of "access" override
-                # all role class declarations.
-                return specific.access
-
-            # Gathering all permissions from role class.
-            role = get_roleclass(role_obj.role_class)
-            perms_list = role.filter_permissions()
-            if permission in perms_list:
-                return True
-        else:
-            pass
-            # aqui
-    else:
-        pass
-        # get non-object permissions
-
+    # If all fails and the user does not have
+    # a role class with "ALL_MODELS", we finnaly
+    # deny the permission.
     return False
 
-
-def get_users_by_permission(permission, obj=None):
-    """
-    TODO
-    """
-    return list()
+# def get_users_by_permission(permission, obj=None):

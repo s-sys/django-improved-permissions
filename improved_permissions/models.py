@@ -1,26 +1,34 @@
 """ permissions models """
 from django.conf import settings
+from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from improved_permissions.roles import RoleManager
-from improved_permissions.utils import get_roleclass
+from improved_permissions.roles import ALLOW_MODE, RoleManager
+from improved_permissions.utils import (get_permissions_list, get_roleclass,
+                                        permission_to_string)
 
 
-class RolePermission(models.Model):
+class UserRole(models.Model):
     """
-    RolePermission
+    UserRole
 
     This model rocks.
-
     """
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='roles',
         verbose_name='Usuário'
+    )
+
+    permissions = models.ManyToManyField(
+        Permission,
+        through='RolePermission',
+        related_name='roles',
+        verbose_name='Permissões'
     )
 
     role_class = models.CharField(max_length=256)
@@ -53,26 +61,56 @@ class RolePermission(models.Model):
         self.clean()
         super().save()
 
+        # Getting the permissions list.
+        role = get_roleclass(self.role_class)
+        all_perms = get_permissions_list(role.get_models())
 
-class SpecificPermission(models.Model):
+        # Filtering the permissions based
+        # on "allow" or "deny".
+        role_instances = list()
+        for perm in all_perms:
+            access = None
+            perm_s = permission_to_string(perm)
+            if role.get_mode() == ALLOW_MODE:
+                # [Allow Mode]
+                # Put the access as "True" only for the
+                # permissions in allow list.
+                access = True if perm_s in role.allow else False
+            else:
+                # [Deny Mode]
+                # Put the acces as "False" only for
+                # the permissions in deny list.
+                access = False if perm_s in role.deny else True
+            role_instances.append(RolePermission(role=self, permission=perm, access=access))
+
+        RolePermission.objects.bulk_create(role_instances)
+
+
+class RolePermission(models.Model):
     """
-    SpecificPermission
+    RolePermission
 
-    This model rocks too.
+    This model rocks.
+
     """
     PERMISSION_CHOICES = (
         (True, 'Allow'),
         (False, 'Deny')
     )
+
     access = models.BooleanField(choices=PERMISSION_CHOICES)
-    permission = models.CharField(max_length=64)
+
     role = models.ForeignKey(
-        RolePermission,
+        UserRole,
         on_delete=models.CASCADE,
-        related_name='specifics'
+        related_name='accesses'
+    )
+
+    permission = models.ForeignKey(
+        Permission,
+        on_delete=models.CASCADE,
+        related_name='accesses'
     )
 
     class Meta:
-        verbose_name = 'Specific Permission'
-        verbose_name_plural = 'Specific Permissions'
-        unique_together = ('permission', 'role')
+        unique_together = ('role', 'permission')
