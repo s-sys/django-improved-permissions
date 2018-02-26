@@ -5,7 +5,8 @@ from django.test import TestCase
 from improved_permissions import ALL_MODELS, Role, RoleManager, exceptions
 from improved_permissions.shortcuts import (assign_role, assign_roles,
                                             get_users_by_role, has_permission,
-                                            has_role)
+                                            has_role, remove_role,
+                                            remove_roles, assign_permission)
 
 
 class NoVerboseNameRole(Role):
@@ -177,3 +178,41 @@ class ShortcutsTest(TestCase):
         self.assertTrue(has_permission(self.julie, 'auth.add_user'))
         self.assertTrue(has_permission(self.julie, 'auth.add_user', self.bob))
         self.assertFalse(has_permission(self.julie, 'auth.change_user', self.bob))
+
+    def test_remove_roles(self):
+        """ test if the remove_roles method works fine """
+        assign_role(self.john, Teacher, self.bob)
+        remove_role(self.john, Teacher, self.bob)
+
+        users_list = get_users_by_role(Teacher)
+        self.assertEqual(users_list, [])
+
+        assign_roles([self.john, self.mike], Teacher, self.bob)
+        remove_roles([self.john, self.mike], Teacher)
+
+        users_list = get_users_by_role(Teacher)
+        self.assertEqual(users_list, [])
+
+        assign_role(self.julie, Coordenator)
+        self.assertTrue(has_permission(self.julie, 'auth.add_user'))
+        remove_role(self.julie, Coordenator)
+        self.assertFalse(has_permission(self.julie, 'auth.add_user'))
+
+    def test_assign_permissions(self):
+        """ test if the permissions assignment works fine """
+
+        # Assign the role and try to use a permission denied by default
+        assign_role(self.john, Teacher, self.bob)
+        self.assertFalse(has_permission(self.john, 'auth.delete_user', self.bob))
+
+        # Assign the permission explicitly True value
+        assign_permission(self.john, Teacher, 'auth.delete_user', True, self.bob)
+        self.assertTrue(has_permission(self.john, 'auth.delete_user', self.bob))
+
+        # Assign the role and try to use a permission allowed by default
+        assign_role(self.mike, Teacher, self.bob)
+        self.assertTrue(has_permission(self.mike, 'auth.add_user', self.bob))
+
+        # Assign the permission explicitly False value
+        assign_permission(self.mike, Teacher, 'auth.add_user', False)
+        self.assertFalse(has_permission(self.mike, 'auth.add_user', self.bob))

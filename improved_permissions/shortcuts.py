@@ -1,7 +1,9 @@
 """ permissions shortcuts """
 from django.contrib.contenttypes.models import ContentType
 
-from improved_permissions import ALL_MODELS, exceptions
+from improved_permissions import ALL_MODELS
+from improved_permissions.exceptions import (InvalidPermissionAssignment,
+                                             InvalidRoleAssignment)
 from improved_permissions.models import RolePermission, UserRole
 from improved_permissions.utils import (get_parents, get_roleclass,
                                         inherit_check, string_to_permission)
@@ -77,25 +79,25 @@ def assign_roles(users_list, role_class, obj=None):
 
     # If no object is provided but the role needs specific models.
     if not obj and role.models != ALL_MODELS:
-        raise exceptions.InvalidRoleAssignment()
+        raise InvalidRoleAssignment()
 
     # If a object is provided but the role does not needs a object.
     if obj and role.models == ALL_MODELS:
-        raise exceptions.InvalidRoleAssignment()
+        raise InvalidRoleAssignment()
 
     # If a object is provided but the role does not register for THAT specific model.
     if obj and obj._meta.model not in models:
-        raise exceptions.InvalidRoleAssignment()
+        raise InvalidRoleAssignment()
 
     if role.unique is True:
         # If the role is marked as unique but multiple users is provided.
         if len(users_list) > 1:
-            raise exceptions.InvalidRoleAssignment()
+            raise InvalidRoleAssignment()
 
         # If the role is marked as unique but already has an user attached.
         has_user = get_users_by_role(role, obj)
         if has_user:
-            raise exceptions.InvalidRoleAssignment()
+            raise InvalidRoleAssignment()
 
     users_set = set(users_list)
     for user in users_set:
@@ -103,6 +105,31 @@ def assign_roles(users_list, role_class, obj=None):
         if obj:
             ur_instance.obj = obj
         ur_instance.save()
+
+
+def remove_role(user, role_class, obj=None):
+    """
+    Proxy method to be used for one
+    User instance.
+    """
+    remove_roles([user], role_class, obj)
+
+
+def remove_roles(users_list, roles_class, obj=None):
+    """
+    Delete all RolePermission objects in the database
+    referencing the followling role_class to the
+    user.
+    If "obj" is provided, only the instances refencing
+    this object will be deleted.
+    """
+    role = get_roleclass(roles_class)
+    for user in users_list:
+        query = UserRole.objects.filter(user=user, role_class=role.get_class_name())
+        if obj:
+            ct_obj = ContentType.objects.get_for_model(obj)
+            query = query.filter(content_type=ct_obj.id, object_id=obj.id)
+        query.delete()
 
 
 def has_permission(user, permission, obj=None):
@@ -162,4 +189,26 @@ def has_permission(user, permission, obj=None):
     # deny the permission.
     return False
 
-# def get_users_by_permission(permission, obj=None):
+
+def assign_permission(user, roles_class, permission, access, obj=None):
+    """
+    Assign a specific permission value
+    to a given UserRole instance.
+    The values used in this method overrides
+    any configuration of "allow/deny" or
+    "inherit_allow/inherit_deny".
+    """
+    role = get_roleclass(roles_class)
+    perm = string_to_permission(permission)
+    query = UserRole.objects.filter(user=user, role_class=role.get_class_name())
+    if obj:
+        ct_obj = ContentType.objects.get_for_model(obj)
+        query = query.filter(content_type=ct_obj.id, object_id=obj.id)
+
+    if not query:
+        raise InvalidPermissionAssignment('No Role instance was affected.')
+
+    for role_obj in query:
+        perm_obj, created = RolePermission.objects.get_or_create(role=role_obj, permission=perm)
+        perm_obj.access = bool(access)
+        perm_obj.save()

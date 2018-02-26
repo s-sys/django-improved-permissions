@@ -3,15 +3,7 @@ class ImproperlyConfigured(Exception):
     pass
 
 
-class ModelNotDefined(Exception):
-    pass
-
-
 class ParentNotFound(Exception):
-    pass
-
-
-class PermissionNotFound(Exception):
     pass
 
 
@@ -23,7 +15,7 @@ class InvalidRoleAssignment(Exception):
     pass
 
 
-class BadRoleArguments(Exception):
+class InvalidPermissionAssignment(Exception):
     pass
 
 
