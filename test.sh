@@ -1,5 +1,9 @@
 #!/bin/bash
 
+rm -rf cover
 isort -rc --skip .venv --skip migrations .
 pylint --load-plugins=pylint_django **/*.py
-./manage.py test --failfast
+coverage erase
+coverage run manage.py test --failfast
+coverage report
+coverage html

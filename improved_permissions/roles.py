@@ -1,16 +1,14 @@
-"""definition of role and rolemanager """
-import inspect
-
+""" definition of role and rolemanager """
 from django.apps import apps
-from django.db.models import Model as DJANGO_MODEL
 
 from improved_permissions.exceptions import ImproperlyConfigured, NotAllowed
-from improved_permissions.utils import string_to_permission
+from improved_permissions.utils import get_model, string_to_permission
 
 ALLOW_MODE = 0
 DENY_MODE = 1
 
 ALL_MODELS = -1
+
 
 class RoleManager(object):
     """
@@ -94,10 +92,17 @@ class RoleManager(object):
         models_isvalid = True
         if hasattr(new_class, 'models'):
             if isinstance(new_class.models, list):
+                # Check for every item in the "models" list.
+                valid_list = list()
                 for model in new_class.models:
-                    if not inspect.isclass(model) or not issubclass(model, DJANGO_MODEL):
+                    # Get the original odel class or "app_label.model"
+                    model_class = get_model(model)
+                    if model_class:
+                        valid_list.append(model_class)
+                    else:
                         models_isvalid = False
                         break
+                new_class.models = valid_list
             elif new_class.models == ALL_MODELS:
                 # Role classes with ALL_MODELS autoimplies inherit=True.
                 new_class.inherit = True
@@ -145,14 +150,9 @@ class RoleManager(object):
 
         # XOR operation.
         if c_allow and c_deny or not c_allow and not c_deny:
-            raise ImproperlyConfigured('Provide either "{allow_field}" or '
-                                       '"{deny_field}" when inherit=True o'
-                                       'r models=ALL_MODELS for the Role "'
-                                       '{name}".'
-                                       .format(allow_field=allow_field,
-                                               deny_field=deny_field,
-                                               name=name)
-                                      )
+            raise ImproperlyConfigured('Provide either "%s" or "%s" when inherit=True'
+                                       ' or models=ALL_MODELS for the Role "%s".'
+                                       '' % (allow_field, deny_field, name))
 
         if c_allow and isinstance(getattr(new_class, allow_field), list):
             perms_list = getattr(new_class, allow_field)
@@ -161,6 +161,9 @@ class RoleManager(object):
         elif c_deny and isinstance(getattr(new_class, deny_field), list):
             perms_list = getattr(new_class, deny_field)
             result = DENY_MODE
+        else:
+            raise ImproperlyConfigured('"%s" or "%s" must to be a list in the Role '
+                                       '"%s".' % (allow_field, deny_field, name))
 
         # Check if the permissions given via "inherit_allow"
         # or "inherit_deny" exists in the Permission database.
@@ -174,6 +177,7 @@ class RoleManager(object):
                                            'se.'.format(perm=perm))
         # Return the mode.
         return result
+
 
 class Role(object):
     """
@@ -219,24 +223,20 @@ class Role(object):
     @classmethod
     def get_models(cls):
         cls.__protect()
-        ref = list()
-        if isinstance(cls.models, list):
-            ref = list(cls.models)
-        elif cls.models == ALL_MODELS:
-            ref = list(apps.get_models())  # All models known by Django.
-        return ref
+        if cls.models == ALL_MODELS:
+            return list(apps.get_models())  # All models known by Django.
+        return list(cls.models)
 
     @classmethod
     def is_my_model(cls, model):
         cls.__protect()
-        return model._meta.model in cls.get_models()
+        return model._meta.model in cls.get_models()  # pylint: disable=protected-access
 
 
 class SuperUser(Role):
     """
     Super User Role
     """
-    verbose_name = 'Super User Role'
+    verbose_name = 'Super User'
     models = ALL_MODELS
-    deny = []
     inherit_deny = []

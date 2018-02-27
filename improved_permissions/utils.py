@@ -28,12 +28,12 @@ def autodiscover():
         from django.contrib.auth.models import Permission
         from django.db.utils import OperationalError
         Permission.objects.count()
-    except OperationalError:
+    except OperationalError:  # pragma: no cover
         return
 
     # If any role was registered already,
     # do not perform the autodiscover.
-    if RoleManager.get_roles():
+    if RoleManager.get_roles():  # pragma: no cover
         return
 
     # Looking for Role classes in "roles.py".
@@ -65,6 +65,27 @@ def get_roleclass(role_class):
                 return role
 
     raise RoleNotFound()
+
+
+def get_model(model):
+    """
+    Transforms a string representation
+    into a valid Django Model class.
+    """
+    from django.apps import apps
+    from django.db.models import Model
+
+    if inspect.isclass(model) and issubclass(model, Model):
+        result = model
+    elif isinstance(model, str):
+        app_label, modelname = model.split('.')
+        try:
+            result = apps.get_model(app_label, modelname)
+        except LookupError:
+            pass
+    else:
+        result = None
+    return result
 
 
 def string_to_permission(perm):
@@ -130,17 +151,11 @@ def inherit_check(role_obj, permission):
     Check if the role class has the following
     permission in inherit mode.
     """
-    from improved_permissions import ALLOW_MODE
+    from improved_permissions.roles import ALLOW_MODE
 
     role = get_roleclass(role_obj.role_class)
     if role.inherit is True:
         if role.get_inherit_mode() == ALLOW_MODE:
-            if permission in role.inherit_allow:
-                return True, True
-            return True, False
-        else:
-            if permission in role.inherit_deny:
-                return True, False
-            return True, True
-
-    return False, False
+            return True if permission in role.inherit_allow else False
+        return False if permission in role.inherit_deny else True
+    raise AssertionError

@@ -26,7 +26,7 @@ Creating your first Role
 
 2. Create a module in your app called roles.py and write the following::
 
-	from improved_permissions import Role
+	from improved_permissions.roles import Role
 
 	class Friend(Role):
 		verbose_name = "Friend"
@@ -68,3 +68,12 @@ Applying the concept of "parents"
 ---------------------------------
 
 1. TODO
+
+Mixins
+------
+
+1. RoleMixin
+
+2. UserRoleMixin
+
+3. PermissionMixin

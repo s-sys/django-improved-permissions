@@ -1,4 +1,6 @@
 """permissions exceptions"""
+
+
 class ImproperlyConfigured(Exception):
     pass
 

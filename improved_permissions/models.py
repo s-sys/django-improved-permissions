@@ -6,7 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from improved_permissions.roles import ALLOW_MODE, RoleManager
+from improved_permissions.roles import ALL_MODELS, ALLOW_MODE, RoleManager
 from improved_permissions.utils import (get_permissions_list, get_roleclass,
                                         permission_to_string)
 
@@ -15,7 +15,10 @@ class UserRole(models.Model):
     """
     UserRole
 
-    This model rocks.
+    This model represents the relationship between
+    a user instance of the project with any other
+    Django model, according to the rules defined
+    in the Role class.
     """
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -44,9 +47,9 @@ class UserRole(models.Model):
 
     def __str__(self):
         role = get_roleclass(self.role_class)
-        output = '{user} as {role}'.format(user=self.user, role=role.get_verbose_name())
+        output = '{user} is {role}'.format(user=self.user, role=role.get_verbose_name())
         if self.obj:
-            output += ' in {obj}'.format(obj=self.obj)
+            output += ' of {obj}'.format(obj=self.obj)
         return output
 
     def clean(self):
@@ -63,6 +66,12 @@ class UserRole(models.Model):
 
         # Getting the permissions list.
         role = get_roleclass(self.role_class)
+
+        # non-object roles does not have specific
+        # permissions auto created.
+        if role.models == ALL_MODELS:
+            return
+
         all_perms = get_permissions_list(role.get_models())
 
         # Filtering the permissions based
@@ -90,15 +99,18 @@ class RolePermission(models.Model):
     """
     RolePermission
 
-    This model rocks.
-
+    This model has the function of performing
+    the m2m relation between the Permission
+    and the UserRole instances. It is possible
+    that different instances of the same UserRole
+    may have access to different permissions.
     """
     PERMISSION_CHOICES = (
         (True, 'Allow'),
         (False, 'Deny')
     )
 
-    access = models.BooleanField(choices=PERMISSION_CHOICES)
+    access = models.BooleanField(choices=PERMISSION_CHOICES, default=True)
 
     role = models.ForeignKey(
         UserRole,
