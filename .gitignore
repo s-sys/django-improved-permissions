@@ -2,3 +2,11 @@
 *.pye
 *.pyc
 *.sqlite3
+
+.coverage
+.venv
+secret_key.txt
+cover
+pylint-report.txt
+coverage.xml
+.coverage.*
