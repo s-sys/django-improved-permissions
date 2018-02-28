@@ -73,31 +73,36 @@ class MixinsTest(TestCase):
 
     def test_get_users(self):
         """ test if the get_user method works fine """
-        self.book.assign_role(self.bob, Author)
+        self.book.assign_roles([self.bob], Author)
         self.john.assign_role(Advisor, self.bob)
-        self.library.assign_roles([self.john, self.mike], LibraryOwner)
+        self.library.assign_role(self.mike, LibraryOwner)
+
+        # Get single user instance.
+        result = self.library.get_user()
+        self.assertEqual(result, self.mike)
+
+        # Try to get a user from a object with
+        # Role class unique=False
+        with self.assertRaises(NotAllowed):
+            self.book.get_user()
 
         # Get all users with who is Author of "book".
-        list_result = self.book.get_users_by_role(Author)
-        self.assertEqual(list_result, [self.bob])
+        self.book.assign_role(self.john, Author)
+        result = self.book.get_users(Author)
+        self.assertEqual(result, [self.john, self.bob])
 
         # Get all users with any role to "library".
-        dict_result = self.library.get_users()
-        result = [
-            {'role': LibraryOwner, 'user': self.john},
-            {'role': LibraryOwner, 'user': self.mike},
-        ]
-        self.assertEqual(dict_result, result)
+        result = self.library.get_users()
+        self.assertEqual(result, [self.mike])
+
+        # Try to get users list from a object
+        # using a wrong Role class.
+        with self.assertRaises(NotAllowed):
+            self.library.get_users(Advisor)
 
         # Get all users with any role and any object.
-        dict_result = get_users()
-        result =  [
-            {'role': Author, 'user': self.bob, 'obj': self.book},
-            {'role': Advisor, 'user': self.john, 'obj': self.bob},
-            {'role': LibraryOwner, 'user': self.john, 'obj': self.library},
-            {'role': LibraryOwner, 'user': self.mike, 'obj': self.library},
-        ]
-        self.assertEqual(dict_result, result)
+        result = get_users()
+        self.assertEqual(result, [self.john, self.bob, self.mike])
 
         self.john.remove_role(Advisor)
         self.assertFalse(self.john.has_role(Advisor, self.bob))
@@ -109,16 +114,12 @@ class MixinsTest(TestCase):
         self.library.assign_role(self.john, LibraryOwner)
 
         # Get all objects where john is "Advisor".
-        list_result = self.john.get_objects(Advisor)
-        self.assertEqual(list_result, [self.bob])
+        result = self.john.get_objects(Advisor)
+        self.assertEqual(result, [self.bob])
 
         # Get all objects of john for any Role.
-        dict_result = self.john.get_objects()
-        result = [
-            {'role': Advisor, 'obj': self.bob},
-            {'role': LibraryOwner, 'obj': self.library},
-        ]
-        self.assertEqual(dict_result, result)
+        result = self.john.get_objects()
+        self.assertEqual(result, [self.library, self.bob])
 
     def test_get_permissions(self):
         """ test if the get_permissions method works fine """

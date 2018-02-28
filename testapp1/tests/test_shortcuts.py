@@ -5,9 +5,10 @@ from improved_permissions.exceptions import (InvalidPermissionAssignment,
                                              InvalidRoleAssignment)
 from improved_permissions.roles import ALL_MODELS, Role, RoleManager
 from improved_permissions.shortcuts import (assign_permission, assign_role,
-                                            assign_roles, get_users_by_role,
+                                            assign_roles, get_user, get_users,
                                             has_permission, has_role,
                                             remove_role, remove_roles)
+from improved_permissions.templatetags.roletags import has_perm
 from testapp1.models import Chapter, MyUser
 
 
@@ -62,7 +63,7 @@ class ShortcutsTest(TestCase):
         """ test if the assignment methods work fine """
         assign_roles([self.john, self.mike], Teacher, self.bob)
 
-        users_list = get_users_by_role(Teacher, self.bob)
+        users_list = get_users(Teacher, self.bob)
         self.assertEqual(users_list, [self.john, self.mike])
 
         with self.assertRaises(InvalidRoleAssignment):
@@ -80,7 +81,7 @@ class ShortcutsTest(TestCase):
         with self.assertRaises(InvalidRoleAssignment):
             assign_role(self.john, Advisor)
 
-        users_list = get_users_by_role(Coordenator)
+        users_list = get_users(Coordenator)
         self.assertEqual(users_list, [self.john])
 
     def test_assign_roles_unique(self):
@@ -100,7 +101,7 @@ class ShortcutsTest(TestCase):
         with self.assertRaises(InvalidRoleAssignment):
             assign_role(self.mike, Advisor, self.julie)
 
-        users_list = get_users_by_role(Advisor)
+        users_list = get_users(Advisor)
         self.assertEqual(users_list, [self.john])
 
     def test_has_role(self):
@@ -131,18 +132,22 @@ class ShortcutsTest(TestCase):
         self.assertTrue(has_permission(self.julie, 'testapp1.add_user', self.bob))
         self.assertFalse(has_permission(self.julie, 'testapp1.change_user', self.bob))
 
+        # Template tag
+        self.assertTrue(has_perm(self.julie, 'testapp1.add_user', self.bob))
+        self.assertFalse(has_perm(self.julie, 'testapp1.change_user', self.bob))
+
     def test_remove_roles(self):
         """ test if the remove_roles method works fine """
         assign_role(self.john, Teacher, self.bob)
         remove_role(self.john, Teacher, self.bob)
 
-        users_list = get_users_by_role(Teacher)
+        users_list = get_users(Teacher)
         self.assertEqual(users_list, [])
 
         assign_roles([self.john, self.mike], Teacher, self.bob)
         remove_roles([self.john, self.mike], Teacher)
 
-        users_list = get_users_by_role(Teacher)
+        users_list = get_users(Teacher)
         self.assertEqual(users_list, [])
 
         assign_role(self.julie, Coordenator)

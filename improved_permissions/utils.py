@@ -75,6 +75,7 @@ def get_model(model):
     from django.apps import apps
     from django.db.models import Model
 
+    result = None
     if inspect.isclass(model) and issubclass(model, Model):
         result = model
     elif isinstance(model, str):
@@ -83,8 +84,6 @@ def get_model(model):
             result = apps.get_model(app_label, modelname)
         except LookupError:
             pass
-    else:
-        result = None
     return result
 
 
@@ -96,7 +95,7 @@ def string_to_permission(perm):
     from django.contrib.auth.models import Permission
     try:
         app_label, codename = perm.split('.')
-    except (ValueError, IndexError):
+    except (ValueError, IndexError):  # pragma: no cover
         raise AttributeError
     return Permission.objects.get(content_type__app_label=app_label, codename=codename)
 
@@ -118,9 +117,6 @@ def get_permissions_list(models_list):
     """
     from django.contrib.auth.models import Permission
     from django.contrib.contenttypes.models import ContentType
-
-    if models_list is None:
-        return list()
 
     ct_list = ContentType.objects.get_for_models(*models_list)
     ct_ids = [ct.id for cls, ct in ct_list.items()]
@@ -158,4 +154,4 @@ def inherit_check(role_obj, permission):
         if role.get_inherit_mode() == ALLOW_MODE:
             return True if permission in role.inherit_allow else False
         return False if permission in role.inherit_deny else True
-    raise AssertionError
+    return False

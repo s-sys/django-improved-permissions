@@ -51,11 +51,11 @@ class RoleMixin(models.Model):
     class Meta:
         abstract = True
 
-    def get_users(self):
-        return shortcuts.get_users(self)
+    def get_user(self):
+        return shortcuts.get_user(self)
 
-    def get_users_by_role(self, role_class):
-        return shortcuts.get_users_by_role(role_class, self)
+    def get_users(self, role_class=None):
+        return shortcuts.get_users(role_class, self)
 
     def assign_role(self, user, role_class):
         return shortcuts.assign_role(user, role_class, self)

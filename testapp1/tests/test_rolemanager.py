@@ -33,7 +33,7 @@ class NoAllowDenyRole(Role):
 
 class WrongDenyRole(Role):
     verbose_name = "Role"
-    models = [MyUser]
+    models = ['testapp1.MyUser']
     deny = 'I am not a list'
 
 
