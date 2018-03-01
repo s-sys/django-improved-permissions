@@ -1,7 +1,8 @@
 """ permissions utils """
 import inspect
 
-from improved_permissions.exceptions import ParentNotFound, RoleNotFound
+from improved_permissions.exceptions import (ImproperlyConfigured,
+                                             ParentNotFound, RoleNotFound)
 
 
 def is_role(role_class):
@@ -138,8 +139,26 @@ def get_parents(model):
                 if hasattr(model, parent):
                     result.append(getattr(model, parent))
                 else:
-                    raise ParentNotFound()
+                    raise ParentNotFound('The field "%s" was not found in the '
+                                         'model "%s".' % (parent, str(model)))
     return result
+
+
+def is_unique_together(model):
+    """
+    Return True if the model does not
+    accept multiple roles attached to
+    it using the user instance.
+    """
+    if hasattr(model, 'RoleOptions'):
+        options = getattr(model, 'RoleOptions')
+        if hasattr(options, 'unique_together'):
+            ut_value = getattr(options, 'unique_together')
+            if isinstance(ut_value, bool):
+                return ut_value
+            raise ImproperlyConfigured('The field "unique_together" of "%s" must '
+                                       'be a bool value.' % (str(model)))
+    return False
 
 
 def inherit_check(role_obj, permission):
@@ -180,5 +199,5 @@ def register_cleanup():
 
     ignore = [UserRole, RolePermission]
     for model in apps.get_models():
-        if model not in ignore:
+        if model not in ignore and hasattr(model, 'id'):
             post_delete.connect(cleanup_handler, sender=model)

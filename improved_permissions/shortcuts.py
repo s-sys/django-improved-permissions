@@ -1,4 +1,5 @@
 """ permissions shortcuts """
+# pylint: disable=too-many-lines
 from django.contrib.contenttypes.models import ContentType
 
 from improved_permissions.exceptions import (InvalidPermissionAssignment,
@@ -6,7 +7,8 @@ from improved_permissions.exceptions import (InvalidPermissionAssignment,
 from improved_permissions.models import RolePermission, UserRole
 from improved_permissions.roles import ALL_MODELS
 from improved_permissions.utils import (get_parents, get_roleclass,
-                                        inherit_check, string_to_permission)
+                                        inherit_check, is_unique_together,
+                                        string_to_permission)
 
 
 def has_role(user, role_class, obj=None):
@@ -32,15 +34,20 @@ def get_user(obj):
     Get the User instance attached to the object.
     Only one UserRole must exists and this relation
     must be unique=True.
+
+    Returns None if there is no user attached
+    to the object.
     """
     ct_obj = ContentType.objects.get_for_model(obj)
-    ur_obj = UserRole.objects.get(content_type=ct_obj.id, object_id=obj.id)
+    ur_obj = UserRole.objects.filter(content_type=ct_obj.id, object_id=obj.id).first()
 
-    role = get_roleclass(ur_obj.role_class)
-    if role.unique is True:
-        return ur_obj.user
+    if ur_obj:
+        role = get_roleclass(ur_obj.role_class)
+        if role.unique is True:
+            return ur_obj.user
+        raise NotAllowed('The role %s is not unique.' % role.get_verbose_name())
 
-    raise NotAllowed('The role %s is not unique.' % role.get_verbose_name())
+    return None
 
 
 def get_users(role_class=None, obj=None):
@@ -61,17 +68,23 @@ def get_users(role_class=None, obj=None):
 
     if not role_class and not obj:
         # All users who have any Role attached.
-        query = UserRole.objects.all()
+        query = (UserRole.objects
+                 .select_related('user')
+                 .all())
 
     elif role_class and not obj:
         # All users who have "role_class" attached to any object.
         role = get_roleclass(role_class)
-        query = UserRole.objects.filter(role_class=role.get_class_name())
+        query = (UserRole.objects
+                 .select_related('user')
+                 .filter(role_class=role.get_class_name()))
 
     elif not role_class and obj:
         # All users who have any Role attached to the object.
         ct_obj = ContentType.objects.get_for_model(obj)
-        query = UserRole.objects.filter(content_type=ct_obj.id, object_id=obj.id)
+        query = (UserRole.objects
+                 .select_related('user')
+                 .filter(content_type=ct_obj.id, object_id=obj.id))
 
     else:
         # All users who have "role_class" attached to the object.
@@ -82,6 +95,7 @@ def get_users(role_class=None, obj=None):
 
         ct_obj = ContentType.objects.get_for_model(obj)
         query = (UserRole.objects
+                 .select_related('user')
                  .filter(content_type=ct_obj.id, object_id=obj.id)
                  .filter(role_class=role.get_class_name()))
 
@@ -142,6 +156,32 @@ def get_permissions(user, role_class, obj=None):
     return ur_obj.accesses.all()
 
 
+def get_role(user, obj=None):
+    """
+    Proxy method to be used when you sure that
+    will have only one role class attached.
+    """
+    return get_roles(user, obj)[0]
+
+
+def get_roles(user, obj=None):
+    """
+    Return a list of Role Classes
+    that is attached to "user".
+
+    If "obj" is provided, the object
+    must be attached as well.
+    """
+    query = UserRole.objects.filter(user=user)
+    if obj:
+        ct_obj = ContentType.objects.get_for_model(obj)
+        query = query.filter(content_type=ct_obj.id, object_id=obj.id)
+
+    # Transform the string representations
+    # into role classes and return as list.
+    return [get_roleclass(ur_obj.role_class) for ur_obj in query]
+
+
 def assign_role(user, role_class, obj=None):
     """
     Proxy method to be used for one
@@ -172,13 +212,20 @@ def assign_roles(users_list, role_class, obj=None):
         raise InvalidRoleAssignment('The object "%s" is not a valid model of Role "%s"'
                                     % (str(obj), name))
 
+    # Check if the model accepts multiple roles
+    # attached using the same User instance.
+    if obj and is_unique_together(obj):
+        has_user = get_users(obj=obj)
+        if has_user:
+            raise InvalidRoleAssignment()
+
     if role.unique is True:
         # If the role is marked as unique but multiple users are provided.
         if len(users_list) > 1:
             raise InvalidRoleAssignment()
 
         # If the role is marked as unique but already has an user attached.
-        has_user = get_users(role, obj)
+        has_user = get_users(role_class=role, obj=obj)
         if has_user:
             raise InvalidRoleAssignment()
 

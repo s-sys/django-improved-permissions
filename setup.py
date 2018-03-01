@@ -1,3 +1,4 @@
+""" improved_permissions setup configs """
 import os
 
 from setuptools import find_packages, setup

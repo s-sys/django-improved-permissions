@@ -52,11 +52,11 @@ class Paragraph(RoleMixin, models.Model):
         permission_parents = ['chapter']
 
 
-class WrongParent(RoleMixin, models.Model):
+class UniqueTogether(RoleMixin, models.Model):
     content = models.TextField()
 
     class Meta:
         permissions = [('nothing', 'Nothing!'),]
 
     class RoleOptions:
-        permission_parents = ['doesnt_exist']
+        unique_together = True

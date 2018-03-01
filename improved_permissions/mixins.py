@@ -20,6 +20,12 @@ class UserRoleMixin(models.Model):
     def has_role(self, role_class, obj=None):
         return shortcuts.has_role(self, role_class, obj)
 
+    def get_role(self, obj=None):
+        return shortcuts.get_role(self, obj)
+
+    def get_roles(self, obj=None):
+        return shortcuts.get_roles(self, obj)
+
     def get_objects(self, role_class=None, model=None):
         return shortcuts.get_objects(self, role_class, model)
 
@@ -56,6 +62,12 @@ class RoleMixin(models.Model):
 
     def get_users(self, role_class=None):
         return shortcuts.get_users(role_class, self)
+
+    def get_role(self, user):
+        return shortcuts.get_role(user, self)
+
+    def get_roles(self, user):
+        return shortcuts.get_roles(user, self)
 
     def assign_role(self, user, role_class):
         return shortcuts.assign_role(user, role_class, self)

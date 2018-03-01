@@ -73,6 +73,10 @@ class MixinsTest(TestCase):
 
     def test_get_users(self):
         """ test if the get_user method works fine """
+
+        # There is no user for the "library" yet.
+        self.assertEqual(self.library.get_user(), None)
+
         self.book.assign_roles([self.bob], Author)
         self.john.assign_role(Advisor, self.bob)
         self.library.assign_role(self.mike, LibraryOwner)
@@ -106,6 +110,22 @@ class MixinsTest(TestCase):
 
         self.john.remove_role(Advisor)
         self.assertFalse(self.john.has_role(Advisor, self.bob))
+
+    def test_get_role(self):
+        """ test if the get_role and get_roles methods work fine """
+        self.book.assign_role(self.mike, Author)
+
+        # Check for single role class.
+        self.assertEqual(self.mike.get_role(), Author)
+        self.assertEqual(self.mike.get_role(self.book), Author)
+        self.assertEqual(self.book.get_role(self.mike), Author)  
+
+        self.mike.assign_role(Reviewer, self.book)
+
+        # Check for multiple role class.
+        self.assertEqual(self.mike.get_roles(), [Author, Reviewer])
+        self.assertEqual(self.mike.get_roles(self.book), [Author, Reviewer])
+        self.assertEqual(self.book.get_roles(self.mike), [Author, Reviewer])
 
     def test_get_objects(self):
         """ test if the get_objects method works fine """

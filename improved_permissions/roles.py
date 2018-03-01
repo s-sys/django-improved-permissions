@@ -95,7 +95,7 @@ class RoleManager(object):
                 # Check for every item in the "models" list.
                 valid_list = list()
                 for model in new_class.models:
-                    # Get the original odel class or "app_label.model"
+                    # Get the model class or "app_label.model"
                     model_class = get_model(model)
                     if model_class:
                         valid_list.append(model_class)

@@ -8,7 +8,8 @@ from improved_permissions.shortcuts import (assign_permission, assign_role,
                                             assign_roles, get_user, get_users,
                                             has_permission, has_role,
                                             remove_role, remove_roles)
-from improved_permissions.templatetags.roletags import has_perm
+from improved_permissions.templatetags.roletags import get_role as tg_get_role
+from improved_permissions.templatetags.roletags import has_perm as tg_has_perm
 from testapp1.models import Chapter, MyUser
 
 
@@ -132,9 +133,19 @@ class ShortcutsTest(TestCase):
         self.assertTrue(has_permission(self.julie, 'testapp1.add_user', self.bob))
         self.assertFalse(has_permission(self.julie, 'testapp1.change_user', self.bob))
 
-        # Template tag
-        self.assertTrue(has_perm(self.julie, 'testapp1.add_user', self.bob))
-        self.assertFalse(has_perm(self.julie, 'testapp1.change_user', self.bob))
+    def test_template_tags(self):
+        """ test if template tags work fine """
+        assign_role(self.julie, Coordenator)
+
+        self.assertTrue(tg_has_perm(self.julie, 'testapp1.add_user', self.bob))
+        self.assertFalse(tg_has_perm(self.julie, 'testapp1.change_user', self.bob))
+
+        # Check for non-object related role.
+        self.assertEqual(tg_get_role(self.julie), 'Coordenator')
+
+        # Check of object related role.
+        assign_role(self.julie, Secretary, self.bob)
+        self.assertEqual(tg_get_role(self.julie, self.bob), 'Secretary')
 
     def test_remove_roles(self):
         """ test if the remove_roles method works fine """
