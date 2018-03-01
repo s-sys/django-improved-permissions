@@ -40,3 +40,22 @@ class ModelsTest(TestCase):
             obj = UserRole.objects.get(user=self.john)
             obj.role_class = 'this class doesnt exist.'
             obj.save()
+
+    def test_signal(self):
+        """
+        Test if the role instance are properly removed
+        once the object is deleted.
+        """
+        self.john.assign_role(Advisor, self.bob)
+        
+        # Check if the UserRole instance was created.
+        ur_count = UserRole.objects.filter(user=self.john).count()
+        self.assertEqual(ur_count, 1)
+
+        # Removing the object attached to the UserRole.
+        self.bob.delete()
+
+        # Check if the UserRole instance has removed
+        # by the signal.
+        ur_count = UserRole.objects.filter(user=self.john).count()
+        self.assertEqual(ur_count, 0)

@@ -20,8 +20,8 @@ class UserRoleMixin(models.Model):
     def has_role(self, role_class, obj=None):
         return shortcuts.has_role(self, role_class, obj)
 
-    def get_objects(self, role_class=None):
-        return shortcuts.get_objects(self, role_class)
+    def get_objects(self, role_class=None, model=None):
+        return shortcuts.get_objects(self, role_class, model)
 
     def get_permissions(self, role_class, obj=None):
         return shortcuts.get_permissions(self, role_class, obj)

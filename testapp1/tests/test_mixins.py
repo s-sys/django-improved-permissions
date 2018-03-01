@@ -121,6 +121,10 @@ class MixinsTest(TestCase):
         result = self.john.get_objects()
         self.assertEqual(result, [self.library, self.bob])
 
+        # Get all objects of john but only of User model.
+        result = self.john.get_objects(model=MyUser)
+        self.assertEqual(result, [self.bob])
+
     def test_get_permissions(self):
         """ test if the get_permissions method works fine """
         self.book.assign_role(self.john, Author)

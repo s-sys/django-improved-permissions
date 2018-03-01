@@ -91,16 +91,28 @@ def get_users(role_class=None, obj=None):
     return list(result)
 
 
-def get_objects(user, role_class=None):
+def get_objects(user, role_class=None, model=None):
     """
     Return the list of objects attached
     to a given user.
+
+    If "role_class" is provided, only the objects
+    which as registered in that role class will
+    be returned.
+
+    If "model" is provided, only the objects
+    of that model will be returned.
     """
     result = list()
     query = UserRole.objects.filter(user=user)
+
     if role_class:
         role = get_roleclass(role_class)
         query = query.filter(role_class=role.get_class_name())
+
+    if model:
+        ct_obj = ContentType.objects.get_for_model(model)
+        query = query.filter(content_type=ct_obj.id)
 
     # TODO
     result = set(ur_obj.obj for ur_obj in query)

@@ -155,3 +155,30 @@ def inherit_check(role_obj, permission):
             return True if permission in role.inherit_allow else False
         return False if permission in role.inherit_deny else True
     return False
+
+
+def cleanup_handler(sender, instance, **kwargs):  # pylint: disable=unused-argument
+    """
+    This function is attached to the post_delete
+    signal of all models of Django. Used to remove
+    useless role instances and permissions.
+    """
+    from django.contrib.contenttypes.models import ContentType
+    from improved_permissions.models import UserRole
+    ct_obj = ContentType.objects.get_for_model(instance)
+    UserRole.objects.filter(content_type=ct_obj.id, object_id=instance.id).delete()
+
+
+def register_cleanup():
+    """
+    Register the function "cleanup_handler"
+    to all models in the project.
+    """
+    from django.apps import apps
+    from django.db.models.signals import post_delete
+    from improved_permissions.models import UserRole, RolePermission
+
+    ignore = [UserRole, RolePermission]
+    for model in apps.get_models():
+        if model not in ignore:
+            post_delete.connect(cleanup_handler, sender=model)

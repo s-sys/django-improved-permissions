@@ -10,14 +10,14 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='django-improved-permissions',
-    version='0.0.1',
-    packages=['improved_permissions'],
+    version='0.0.4',
+    packages=find_packages(),
     include_package_data=True,
     license='MIT License',
     description='A Django app to handle all kinds of permissions and roles.',
     long_description=README,
-    download_url = 'https://github.com/gabrielbiasi/django-improved-permissions/archive/0.0.1.zip',
-    url='https://github.com/gabrielbiasi/django-improved-permissions/tree/0.0.1',
+    # download_url = 'https://github.com/gabrielbiasi/django-improved-permissions/archive/0.0.3.zip',
+    # url='https://github.com/gabrielbiasi/django-improved-permissions/tree/0.0.3',
     author='Gabriel de Biasi',
     author_email='biasi131@gmail.com',
     classifiers=[

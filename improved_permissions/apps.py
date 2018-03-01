@@ -1,7 +1,7 @@
 """ permissions configs """
 from django.apps import AppConfig
 
-from improved_permissions.utils import autodiscover
+from improved_permissions.utils import autodiscover, register_cleanup
 
 
 class ImprovedPermissionsConfig(AppConfig):
@@ -10,3 +10,4 @@ class ImprovedPermissionsConfig(AppConfig):
 
     def ready(self):
         autodiscover()
+        register_cleanup()

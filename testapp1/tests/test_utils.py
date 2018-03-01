@@ -2,8 +2,8 @@
 from django.test import TestCase
 
 from improved_permissions.exceptions import ParentNotFound, RoleNotFound
-from improved_permissions.utils import (get_model, get_parents, get_roleclass,
-                                        string_to_permission)
+from improved_permissions.utils import (autodiscover, get_model, get_parents,
+                                        get_roleclass, string_to_permission)
 from testapp1.models import MyUser
 
 
