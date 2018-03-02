@@ -6,27 +6,10 @@ from improved_permissions.exceptions import (InvalidPermissionAssignment,
                                              InvalidRoleAssignment, NotAllowed)
 from improved_permissions.models import RolePermission, UserRole
 from improved_permissions.roles import ALL_MODELS
-from improved_permissions.utils import (get_parents, get_roleclass,
-                                        inherit_check, is_unique_together,
+from improved_permissions.utils import (check_my_model, get_parents,
+                                        get_roleclass, inherit_check,
+                                        is_unique_together,
                                         string_to_permission)
-
-
-def has_role(user, role_class, obj=None):
-    """
-    Check if the "user" has the specific
-    role.
-    If "obj" is provided, the search is
-    refined to look only at that object.
-    """
-    role = get_roleclass(role_class)
-    query = UserRole.objects.filter(role_class=role.get_class_name(), user=user)
-
-    if obj and role.is_my_model(obj):
-        # Example: If "user" is an "Author" of "Book A".
-        ct_obj = ContentType.objects.get_for_model(obj)
-        query.filter(content_type=ct_obj.id, object_id=obj.id)
-
-    return query.count() > 0
 
 
 def get_user(obj):
@@ -45,7 +28,7 @@ def get_user(obj):
         role = get_roleclass(ur_obj.role_class)
         if role.unique is True:
             return ur_obj.user
-        raise NotAllowed('The role %s is not unique.' % role.get_verbose_name())
+        raise NotAllowed('The role "%s" is not unique.' % str(role))
 
     return None
 
@@ -79,11 +62,9 @@ def get_users(role_class=None, obj=None):
         ct_obj = ContentType.objects.get_for_model(obj)
         query = query.filter(content_type=ct_obj.id, object_id=obj.id)
 
-    if role and obj and not role.is_my_model(obj):
-        # if both are provided, check if model
-        # belongs to the role class.
-        raise NotAllowed('"%s" does not belong to the Role '
-                         '"%s".' % (str(obj), role.get_verbose_name()))
+    # Check if object belongs
+    # to the role class.
+    check_my_model(role, obj)
 
     # TODO
     result = set(ur_obj.user for ur_obj in query)
@@ -103,16 +84,22 @@ def get_objects(user, role_class=None, model=None):
     If "model" is provided, only the objects
     of that model will be returned.
     """
-    result = list()
     query = UserRole.objects.filter(user=user)
+    role = None
 
     if role_class:
+        # Filtering by role class.
         role = get_roleclass(role_class)
         query = query.filter(role_class=role.get_class_name())
 
     if model:
+        # Filtering by model.
         ct_obj = ContentType.objects.get_for_model(model)
         query = query.filter(content_type=ct_obj.id)
+
+    # Check if object belongs
+    # to the role class.
+    check_my_model(role, model)
 
     # TODO
     result = set(ur_obj.obj for ur_obj in query)
@@ -140,6 +127,38 @@ def get_permissions(user, role_class, obj=None):
         ur_obj = query.get(content_type__isnull=True, object_id__isnull=True)
 
     return ur_obj.accesses.all()
+
+
+def has_role(user, role_class=None, obj=None):
+    """
+    Check if the "user" has any role
+    attached to him.
+
+    If "role_class" is provided, only
+    this role class will be counted.
+
+    If "obj" is provided, the search is
+    refined to look only at that object.
+    """
+
+    query = UserRole.objects.filter(user=user)
+    role = None
+
+    if role_class:
+        # Filtering by role class.
+        role = get_roleclass(role_class)
+        query = query.filter(role_class=role.get_class_name(), user=user)
+
+    if obj:
+        # Filtering by object.
+        ct_obj = ContentType.objects.get_for_model(obj)
+        query.filter(content_type=ct_obj.id, object_id=obj.id)
+
+    # Check if object belongs
+    # to the role class.
+    check_my_model(role, obj)
+
+    return query.count() > 0
 
 
 def get_role(user, obj=None):
@@ -184,7 +203,10 @@ def assign_roles(users_list, role_class, obj=None):
     """
     users_set = set(users_list)
     role = get_roleclass(role_class)
-    name = role.get_verbose_name()
+
+    # Check if object belongs
+    # to the role class.
+    check_my_model(role, obj)
 
     # If no object is provided but the role needs specific models.
     if not obj and role.models != ALL_MODELS:
@@ -193,11 +215,6 @@ def assign_roles(users_list, role_class, obj=None):
     # If a object is provided but the role does not needs a object.
     if obj and role.models == ALL_MODELS:
         raise InvalidRoleAssignment()
-
-    # If a object is provided but the role does not register for THAT specific model.
-    if obj and not role.is_my_model(obj):
-        raise InvalidRoleAssignment('The object "%s" is not a valid model of Role "%s"'
-                                    % (str(obj), name))
 
     # Check if the model accepts multiple roles
     # attached using the same User instance.
@@ -224,7 +241,7 @@ def assign_roles(users_list, role_class, obj=None):
         ur_instance.save()
 
 
-def remove_role(user, role_class, obj=None):
+def remove_role(user, role_class=None, obj=None):
     """
     Proxy method to be used for one
     User instance.
@@ -232,7 +249,7 @@ def remove_role(user, role_class, obj=None):
     remove_roles([user], role_class, obj)
 
 
-def remove_roles(users_list, role_class, obj=None):
+def remove_roles(users_list, role_class=None, obj=None):
     """
     Delete all RolePermission objects in the database
     referencing the followling role_class to the
@@ -240,13 +257,24 @@ def remove_roles(users_list, role_class, obj=None):
     If "obj" is provided, only the instances refencing
     this object will be deleted.
     """
-    role = get_roleclass(role_class)
-    for user in users_list:
-        query = UserRole.objects.filter(user=user, role_class=role.get_class_name())
-        if obj:
-            ct_obj = ContentType.objects.get_for_model(obj)
-            query = query.filter(content_type=ct_obj.id, object_id=obj.id)
-        query.delete()
+    query = UserRole.objects.all()
+    role = None
+
+    if role_class:
+        # Filtering by role class.
+        role = get_roleclass(role_class)
+        query = query.filter(role_class=role.get_class_name())
+
+    if obj:
+        # Filtering by object.
+        ct_obj = ContentType.objects.get_for_model(obj)
+        query = query.filter(content_type=ct_obj.id, object_id=obj.id)
+
+    # Check if object belongs
+    # to the role class.
+    check_my_model(role, obj)
+
+    query.filter(user__in=users_list).delete()
 
 
 def has_permission(user, permission, obj=None):

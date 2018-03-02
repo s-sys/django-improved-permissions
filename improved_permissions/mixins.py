@@ -17,7 +17,7 @@ class UserRoleMixin(models.Model):
     class Meta:
         abstract = True
 
-    def has_role(self, role_class, obj=None):
+    def has_role(self, role_class=None, obj=None):
         return shortcuts.has_role(self, role_class, obj)
 
     def get_role(self, obj=None):
@@ -35,7 +35,7 @@ class UserRoleMixin(models.Model):
     def assign_role(self, role_class, obj=None):
         return shortcuts.assign_role(self, role_class, obj)
 
-    def remove_role(self, role_class, obj=None):
+    def remove_role(self, role_class=None, obj=None):
         return shortcuts.remove_role(self, role_class, obj)
 
     def has_permission(self, permission, obj=None):
@@ -63,6 +63,9 @@ class RoleMixin(models.Model):
     def get_users(self, role_class=None):
         return shortcuts.get_users(role_class, self)
 
+    def has_role(self, user, role_class=None):
+        return shortcuts.has_role(user, role_class, self)
+
     def get_role(self, user):
         return shortcuts.get_role(user, self)
 
@@ -75,10 +78,10 @@ class RoleMixin(models.Model):
     def assign_roles(self, users_list, role_class):
         return shortcuts.assign_roles(users_list, role_class, self)
 
-    def remove_role(self, user, role_class):
+    def remove_role(self, user, role_class=None):
         return shortcuts.remove_role(user, role_class, self)
 
-    def remove_roles(self, users_list, role_class):
+    def remove_roles(self, users_list, role_class=None):
         return shortcuts.remove_roles(users_list, role_class, self)
 
 

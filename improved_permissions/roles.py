@@ -84,7 +84,7 @@ class RoleManager(object):
         # Check for "verbose_name" declaration.
         if not hasattr(new_class, 'verbose_name'):
             raise ImproperlyConfigured('Provide a "verbose_name" declaration to the '
-                                       'Role class "{name}".'.format(name=name))
+                                       'Role class "%s".' % name)
 
         name = new_class.get_verbose_name()
 
@@ -117,7 +117,7 @@ class RoleManager(object):
         if not models_isvalid:
             raise ImproperlyConfigured('Provide a list of Models classes via '
                                        'declaration of "models" to the Role '
-                                       'class "{name}".'.format(name=name))
+                                       'class "%s".' % name)
 
         # Role classes with "models" = ALLMODELS
         # does not use allow/deny. In this case,
@@ -172,9 +172,9 @@ class RoleManager(object):
             try:
                 string_to_permission(perm)
             except (AttributeError, Permission.DoesNotExist):
-                raise ImproperlyConfigured('"{perm}" does not exist '
+                raise ImproperlyConfigured('"%s" does not exist '
                                            'in the Permission databa'
-                                           'se.'.format(perm=perm))
+                                           'se.' % perm)
         # Return the mode.
         return result
 

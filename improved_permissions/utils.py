@@ -201,3 +201,17 @@ def register_cleanup():
     for model in apps.get_models():
         if model not in ignore and hasattr(model, 'id'):
             post_delete.connect(cleanup_handler, sender=model)
+
+
+def check_my_model(role, obj):
+    """
+    if both are provided, check if obj
+    (instance or model class) belongs
+    to the role class.
+    """
+    from improved_permissions.exceptions import NotAllowed
+
+    if role and obj and not role.is_my_model(obj):
+        model_name = obj._meta.model  # pylint: disable=protected-access
+        raise NotAllowed('The model "%s" does not belong to the Role "%s"'
+                         '.' % (model_name, role.get_verbose_name()))

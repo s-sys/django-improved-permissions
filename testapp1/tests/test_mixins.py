@@ -115,6 +115,9 @@ class MixinsTest(TestCase):
         """ test if the get_role and get_roles methods work fine """
         self.book.assign_role(self.mike, Author)
 
+        self.assertTrue(self.book.has_role(self.mike))
+        self.assertTrue(self.book.has_role(self.mike, Author))
+
         # Check for single role class.
         self.assertEqual(self.mike.get_role(), Author)
         self.assertEqual(self.mike.get_role(self.book), Author)

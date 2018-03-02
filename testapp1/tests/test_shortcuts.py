@@ -2,7 +2,7 @@
 from django.test import TestCase
 
 from improved_permissions.exceptions import (InvalidPermissionAssignment,
-                                             InvalidRoleAssignment)
+                                             InvalidRoleAssignment, NotAllowed)
 from improved_permissions.roles import ALL_MODELS, Role, RoleManager
 from improved_permissions.shortcuts import (assign_permission, assign_role,
                                             assign_roles, get_user, get_users,
@@ -75,7 +75,7 @@ class ShortcutsTest(TestCase):
         users_list = get_users(Teacher, self.bob)
         self.assertEqual(users_list, [self.john, self.mike])
 
-        with self.assertRaises(InvalidRoleAssignment):
+        with self.assertRaises(NotAllowed):
             assign_role(self.john, Teacher, Chapter)
 
     def test_assign_roles_allmodels(self):
@@ -143,6 +143,9 @@ class ShortcutsTest(TestCase):
         self.assertTrue(has_role(self.john, Coordenator))
         self.assertTrue(has_role(self.john, Advisor, self.bob))
 
+        with self.assertRaises(NotAllowed):
+            has_role(self.john, Advisor, self.unique)
+
     def test_has_permission(self):
         """ test if the has_permission method works fine """
         assign_role(self.john, Teacher, self.bob)
@@ -193,7 +196,7 @@ class ShortcutsTest(TestCase):
 
         assign_role(self.julie, Coordenator)
         self.assertTrue(has_permission(self.julie, 'testapp1.add_user'))
-        remove_role(self.julie, Coordenator)
+        remove_role(self.julie)
         self.assertFalse(has_permission(self.julie, 'testapp1.add_user'))
 
     def test_assign_permissions(self):
