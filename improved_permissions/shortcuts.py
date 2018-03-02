@@ -13,7 +13,7 @@ from improved_permissions.utils import (check_my_model, delete_from_cache,
                                         string_to_permission)
 
 
-def get_user(obj):
+def get_user(role_class=None, obj=None):
     """
     Get the User instance attached to the object.
     Only one UserRole must exists and this relation
@@ -22,15 +22,37 @@ def get_user(obj):
     Returns None if there is no user attached
     to the object.
     """
-    ct_obj = ContentType.objects.get_for_model(obj)
-    ur_obj = UserRole.objects.filter(content_type=ct_obj.id, object_id=obj.id).first()
+    query = UserRole.objects.select_related('user').all()
+    role = None
 
-    if ur_obj:
+    if role_class:
+        # All users who have "role_class" attached to any object.
+        role = get_roleclass(role_class)
+        query = query.filter(role_class=role.get_class_name())
+
+    if obj:
+        # All users who have any role attached to the object.
+        ct_obj = ContentType.objects.get_for_model(obj)
+        query = query.filter(content_type=ct_obj.id, object_id=obj.id)
+
+    # Check if object belongs
+    # to the role class.
+    check_my_model(role, obj)
+
+    # Looking for a role class using unique=True
+    selected = list()
+    for ur_obj in query:
         role = get_roleclass(ur_obj.role_class)
         if role.unique is True:
-            return ur_obj.user
-        raise NotAllowed('The role "%s" is not unique.' % str(role))
+            selected.append(ur_obj.user)
 
+    users_set = set(selected)
+    if len(users_set) > 1:
+        raise NotAllowed('Multiple unique roles was found using '
+                         'the function get_user. Use get_users i'
+                         'nstead.')
+    if len(users_set) == 1:
+        return selected[0]
     return None
 
 
@@ -296,14 +318,22 @@ def has_permission(user, permission, obj=None):
         stack = list()
         stack.append(obj)
         while stack:
-            # Getting the UserRole for the current object.
+            # Getting the UserRole instance
+            # for the current object.
             current_obj = stack.pop(0)
             roles_list = get_from_cache(user, current_obj)
             for role_obj in roles_list:
-                # Common search for the permission object
-                perm_access = RolePermission.objects.filter(role=role_obj, permission=perm_obj).first()
-                if perm_access:
-                    return perm_access.access
+
+                # The loop below do not hit the database.
+                # The "get_from_cache" function ensures
+                # that all access information about the
+                # UserRole instance are prefetched in the
+                # first place.
+
+                for ac_obj in role_obj.accesses.all():
+                    if ac_obj.permission == perm_obj:
+                        return ac_obj.access
+
                 # Now, we are in inherit mode.
                 # We need to check if the Role
                 # allows the inherit.
@@ -320,9 +350,13 @@ def has_permission(user, permission, obj=None):
     # "models" = ALL_MODELS.
     allmodels_list = get_from_cache(user)
     for role_obj in allmodels_list:
-        perm_access = RolePermission.objects.filter(role=role_obj, permission=perm_obj).first()
-        if perm_access:
-            return perm_access.access
+
+        # Looking for the access information
+        # in the prefetched data.
+        for ac_obj in role_obj.accesses.all():
+            if ac_obj.permission == perm_obj:
+                return ac_obj.access
+
         # Now, we are in inherit mode again.
         return inherit_check(role_obj, permission)
 
@@ -358,5 +392,5 @@ def assign_permission(user, role_class, permission, access, obj=None):
         perm_obj.access = bool(access)
         perm_obj.save()
 
-    # Cleaning the cache system.
-    delete_from_cache(user, obj)
+        # Cleaning the cache system.
+        delete_from_cache(user, role_obj.obj)

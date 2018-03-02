@@ -106,6 +106,7 @@ class RoleManager(object):
             elif new_class.models == ALL_MODELS:
                 # Role classes with ALL_MODELS autoimplies inherit=True.
                 new_class.inherit = True
+                new_class.unique = False
                 new_class.MODE = DENY_MODE
                 new_class.allow = []
                 new_class.deny = []

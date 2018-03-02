@@ -85,10 +85,13 @@ class MixinsTest(TestCase):
         result = self.library.get_user()
         self.assertEqual(result, self.mike)
 
+        # Get single user instance and role class.
+        result = self.library.get_user(LibraryOwner)
+        self.assertEqual(result, self.mike)
+
         # Try to get a user from a object with
         # Role class unique=False
-        with self.assertRaises(NotAllowed):
-            self.book.get_user()
+        self.assertEqual(self.book.get_user(), None)
 
         # Get all users with who is Author of "book".
         self.book.assign_role(self.john, Author)

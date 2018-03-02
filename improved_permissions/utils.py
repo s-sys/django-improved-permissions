@@ -94,10 +94,12 @@ def string_to_permission(perm):
     into a Permission instance.
     """
     from django.contrib.auth.models import Permission
+
     try:
         app_label, codename = perm.split('.')
     except (ValueError, IndexError):  # pragma: no cover
         raise AttributeError
+
     return Permission.objects.get(content_type__app_label=app_label, codename=codename)
 
 
@@ -184,8 +186,14 @@ def cleanup_handler(sender, instance, **kwargs):  # pylint: disable=unused-argum
     """
     from django.contrib.contenttypes.models import ContentType
     from improved_permissions.models import UserRole
+
     ct_obj = ContentType.objects.get_for_model(instance)
-    UserRole.objects.filter(content_type=ct_obj.id, object_id=instance.id).delete()
+    ur_list = UserRole.objects.filter(content_type=ct_obj.id, object_id=instance.id)
+
+    for ur_obj in ur_list:
+        # Cleaning the cache system.
+        delete_from_cache(ur_obj.user, instance)
+        ur_obj.delete()
 
 
 def register_cleanup():
@@ -258,7 +266,7 @@ def get_from_cache(user, obj=None):
 
     # Check for the cached data.
     data = cache.get(key)
-    if not data:
+    if data is None:
         query = UserRole.objects.prefetch_related('accesses').filter(user=user)
         if obj:
             ct_obj = ContentType.objects.get_for_model(obj)

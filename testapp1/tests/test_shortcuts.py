@@ -98,6 +98,16 @@ class ShortcutsTest(TestCase):
         assign_role(self.john, Advisor, self.bob)
         assign_role(self.john, Advisor, self.julie)
 
+        # Get the single user that has the role attached.
+        self.assertEqual(get_user(Advisor), self.john)
+
+        assign_role(self.mike, Advisor, self.john)
+
+        # Now, multiple users have Advisor.
+        # So the method should not be used.
+        with self.assertRaises(NotAllowed):
+            get_user(Advisor)
+
         # Trying to assign the multiple roles using a Role with unique=True
         with self.assertRaises(InvalidRoleAssignment):
             assign_roles([self.john, self.mike], Advisor, self.julie)
@@ -111,7 +121,7 @@ class ShortcutsTest(TestCase):
             assign_role(self.mike, Advisor, self.julie)
 
         users_list = get_users(Advisor)
-        self.assertEqual(users_list, [self.john])
+        self.assertEqual(users_list, [self.john, self.mike])
 
     def test_unique_together(self):
         """ test if models marked as unique_together works fine """
@@ -234,5 +244,13 @@ class ShortcutsTest(TestCase):
 
         # Expliciting a permission to a role using ALL_MODELS.
         assign_role(self.julie, SubCoordenator)
+        self.assertFalse(has_permission(self.julie, 'testapp1.delete_user'))
+
         assign_permission(self.julie, SubCoordenator, 'testapp1.delete_user', access=True)
         self.assertTrue(has_permission(self.julie, 'testapp1.delete_user'))
+        
+        # Other permissions are still False.
+        self.assertFalse(has_permission(self.julie, 'testapp1.add_user'))
+
+        remove_role(self.julie, SubCoordenator)
+        self.assertFalse(has_permission(self.julie, 'testapp1.delete_user'))

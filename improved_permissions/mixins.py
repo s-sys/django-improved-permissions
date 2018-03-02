@@ -57,8 +57,8 @@ class RoleMixin(models.Model):
     class Meta:
         abstract = True
 
-    def get_user(self):
-        return shortcuts.get_user(self)
+    def get_user(self, role_class=None):
+        return shortcuts.get_user(role_class, self)
 
     def get_users(self, role_class=None):
         return shortcuts.get_users(role_class, self)
