@@ -91,7 +91,7 @@ def get_model(model):
 def string_to_permission(perm):
     """
     Transforms a string representation
-    into a Permissin instance.
+    into a Permission instance.
     """
     from django.contrib.auth.models import Permission
     try:

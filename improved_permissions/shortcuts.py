@@ -66,38 +66,24 @@ def get_users(role_class=None, obj=None):
     class attached to any object.
     """
 
-    if not role_class and not obj:
-        # All users who have any Role attached.
-        query = (UserRole.objects
-                 .select_related('user')
-                 .all())
+    query = UserRole.objects.select_related('user').all()
+    role = None
 
-    elif role_class and not obj:
+    if role_class:
         # All users who have "role_class" attached to any object.
         role = get_roleclass(role_class)
-        query = (UserRole.objects
-                 .select_related('user')
-                 .filter(role_class=role.get_class_name()))
+        query = query.filter(role_class=role.get_class_name())
 
-    elif not role_class and obj:
-        # All users who have any Role attached to the object.
+    if obj:
+        # All users who have any role attached to the object.
         ct_obj = ContentType.objects.get_for_model(obj)
-        query = (UserRole.objects
-                 .select_related('user')
-                 .filter(content_type=ct_obj.id, object_id=obj.id))
+        query = query.filter(content_type=ct_obj.id, object_id=obj.id)
 
-    else:
-        # All users who have "role_class" attached to the object.
-        role = get_roleclass(role_class)
-        if not role.is_my_model(obj):
-            raise NotAllowed('"%s" does not belong to the Role '
-                             '"%s".' % (str(obj), role.get_verbose_name()))
-
-        ct_obj = ContentType.objects.get_for_model(obj)
-        query = (UserRole.objects
-                 .select_related('user')
-                 .filter(content_type=ct_obj.id, object_id=obj.id)
-                 .filter(role_class=role.get_class_name()))
+    if role and obj and not role.is_my_model(obj):
+        # if both are provided, check if model
+        # belongs to the role class.
+        raise NotAllowed('"%s" does not belong to the Role '
+                         '"%s".' % (str(obj), role.get_verbose_name()))
 
     # TODO
     result = set(ur_obj.user for ur_obj in query)
@@ -166,7 +152,7 @@ def get_role(user, obj=None):
 
 def get_roles(user, obj=None):
     """
-    Return a list of Role Classes
+    Return a list of role classes
     that is attached to "user".
 
     If "obj" is provided, the object
@@ -196,6 +182,7 @@ def assign_roles(users_list, role_class, obj=None):
     referencing the followling role_class to the
     user.
     """
+    users_set = set(users_list)
     role = get_roleclass(role_class)
     name = role.get_verbose_name()
 
@@ -215,9 +202,10 @@ def assign_roles(users_list, role_class, obj=None):
     # Check if the model accepts multiple roles
     # attached using the same User instance.
     if obj and is_unique_together(obj):
-        has_user = get_users(obj=obj)
-        if has_user:
-            raise InvalidRoleAssignment()
+        for user in users_set:
+            has_user = get_roles(user=user, obj=obj)
+            if has_user:
+                raise InvalidRoleAssignment()
 
     if role.unique is True:
         # If the role is marked as unique but multiple users are provided.
@@ -229,7 +217,6 @@ def assign_roles(users_list, role_class, obj=None):
         if has_user:
             raise InvalidRoleAssignment()
 
-    users_set = set(users_list)
     for user in users_set:
         ur_instance = UserRole(role_class=role.get_class_name(), user=user)
         if obj:
@@ -290,7 +277,7 @@ def has_permission(user, permission, obj=None):
                 # allows the inherit.
                 return inherit_check(role_obj, permission)
 
-            # Try to look even futher
+            # Try to look even further
             # for possible parent fields.
             parents_list = get_parents(current_obj)
             for parent in parents_list:

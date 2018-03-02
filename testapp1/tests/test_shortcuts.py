@@ -10,7 +10,7 @@ from improved_permissions.shortcuts import (assign_permission, assign_role,
                                             remove_role, remove_roles)
 from improved_permissions.templatetags.roletags import get_role as tg_get_role
 from improved_permissions.templatetags.roletags import has_perm as tg_has_perm
-from testapp1.models import Chapter, MyUser
+from testapp1.models import Chapter, MyUser, UniqueTogether
 
 
 class Advisor(Role):
@@ -28,7 +28,7 @@ class Teacher(Role):
 
 class Secretary(Role):
     verbose_name = "Secretary"
-    models = [MyUser]
+    models = [MyUser, UniqueTogether]
     allow = ['testapp1.delete_user']
 
 
@@ -44,6 +44,12 @@ class Coordenator(Role):
     inherit_deny = ['testapp1.change_user']
 
 
+class UniqueOwner(Role):
+    verbose_name = "Owner of Unique"
+    models = [UniqueTogether]
+    deny = []
+
+
 class ShortcutsTest(TestCase):
     """ test all functions in shortcuts """
 
@@ -54,11 +60,13 @@ class ShortcutsTest(TestCase):
         RoleManager.register_role(Secretary)
         RoleManager.register_role(SubCoordenator)
         RoleManager.register_role(Coordenator)
+        RoleManager.register_role(UniqueOwner)
 
         self.john = MyUser.objects.create(username="john")
         self.bob = MyUser.objects.create(username="bob")
         self.mike = MyUser.objects.create(username="mike")
         self.julie = MyUser.objects.create(username="julie")
+        self.unique = UniqueTogether.objects.create(content='Some data')
 
     def test_assign_roles(self):
         """ test if the assignment methods work fine """
@@ -104,6 +112,28 @@ class ShortcutsTest(TestCase):
 
         users_list = get_users(Advisor)
         self.assertEqual(users_list, [self.john])
+
+    def test_unique_together(self):
+        """ test if models marked as unique_together works fine """
+
+        # Nothing attached to the object.
+        users_list = self.unique.get_users()
+        self.assertEqual(users_list, [])
+
+        # Confirm that the object was attached to the user.
+        self.mike.assign_role(UniqueOwner, self.unique)
+        self.assertTrue(self.mike.has_role(UniqueOwner, self.unique))
+
+        # Try to attach another role to the object
+        # but using the same user instance.
+        with self.assertRaises(InvalidRoleAssignment):
+            self.mike.assign_role(Secretary, self.unique)
+
+        # Remove the old role instance and try again
+        # to attach the new role.
+        self.mike.remove_role(UniqueOwner, self.unique)
+        self.mike.assign_role(Secretary, self.unique)
+        self.assertTrue(self.mike.has_role(Secretary, self.unique))
 
     def test_has_role(self):
         """ test if has_role method works fine """
