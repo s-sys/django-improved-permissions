@@ -1,7 +1,7 @@
 """ permissions utils """
 import inspect
 
-from improved_permissions.exceptions import (ImproperlyConfigured,
+from improved_permissions.exceptions import (ImproperlyConfigured, NotAllowed,
                                              ParentNotFound, RoleNotFound)
 
 
@@ -209,9 +209,64 @@ def check_my_model(role, obj):
     (instance or model class) belongs
     to the role class.
     """
-    from improved_permissions.exceptions import NotAllowed
-
     if role and obj and not role.is_my_model(obj):
         model_name = obj._meta.model  # pylint: disable=protected-access
         raise NotAllowed('The model "%s" does not belong to the Role "%s"'
                          '.' % (model_name, role.get_verbose_name()))
+
+
+def generate_cache_key(user, obj=None):
+    """
+    Generate a md5 digest based on the
+    string representation of the user
+    and the object passed via arguments.
+    """
+    from hashlib import md5
+
+    key = md5()
+    key.update(str(user).encode('utf-8'))
+    if obj:
+        key.update(str(obj).encode('utf-8'))
+    return key.hexdigest()
+
+
+def delete_from_cache(user, obj=None):
+    """
+    Delete all permissions data from
+    the cache about the user and the
+    object passed via arguments.
+    """
+    from django.core.cache import cache
+
+    key = generate_cache_key(user, obj)
+    cache.delete(key)
+
+
+def get_from_cache(user, obj=None):
+    """
+    Get all permissions data about
+    the user and the object passed
+    via arguments e store it in
+    the Django cache system.
+    """
+    from django.contrib.contenttypes.models import ContentType
+    from django.core.cache import cache
+    from improved_permissions.models import UserRole
+
+    # Key preparation.
+    key = generate_cache_key(user, obj)
+
+    # Check for the cached data.
+    data = cache.get(key)
+    if not data:
+        query = UserRole.objects.prefetch_related('accesses').filter(user=user)
+        if obj:
+            ct_obj = ContentType.objects.get_for_model(obj)
+            query = (query.filter(content_type=ct_obj.id)
+                     .filter(object_id=obj.id))
+        else:
+            query = (query.filter(object_id__isnull=True)
+                     .filter(content_type__isnull=True))
+        data = list(query)
+        cache.set(key, data)
+    return data

@@ -6,7 +6,8 @@ from improved_permissions.exceptions import (InvalidPermissionAssignment,
                                              InvalidRoleAssignment, NotAllowed)
 from improved_permissions.models import RolePermission, UserRole
 from improved_permissions.roles import ALL_MODELS
-from improved_permissions.utils import (check_my_model, get_parents,
+from improved_permissions.utils import (check_my_model, delete_from_cache,
+                                        get_from_cache, get_parents,
                                         get_roleclass, inherit_check,
                                         is_unique_together,
                                         string_to_permission)
@@ -240,6 +241,9 @@ def assign_roles(users_list, role_class, obj=None):
             ur_instance.obj = obj
         ur_instance.save()
 
+        # Cleaning the cache system.
+        delete_from_cache(user, obj)
+
 
 def remove_role(user, role_class=None, obj=None):
     """
@@ -274,6 +278,11 @@ def remove_roles(users_list, role_class=None, obj=None):
     # to the role class.
     check_my_model(role, obj)
 
+    # Cleaning the cache system.
+    for user in users_list:
+        delete_from_cache(user, obj)
+
+    # Cleaning the database.
     query.filter(user__in=users_list).delete()
 
 
@@ -289,12 +298,7 @@ def has_permission(user, permission, obj=None):
         while stack:
             # Getting the UserRole for the current object.
             current_obj = stack.pop(0)
-            ct_obj = ContentType.objects.get_for_model(current_obj)
-            roles_list = (UserRole.objects
-                          .filter(object_id=current_obj.id)
-                          .filter(content_type=ct_obj.id)
-                          .filter(user=user))
-
+            roles_list = get_from_cache(user, current_obj)
             for role_obj in roles_list:
                 # Common search for the permission object
                 perm_access = RolePermission.objects.filter(role=role_obj, permission=perm_obj).first()
@@ -314,10 +318,7 @@ def has_permission(user, permission, obj=None):
     # If nothing was found or the obj was
     # not provided, try now for roles with
     # "models" = ALL_MODELS.
-    allmodels_list = (UserRole.objects
-                      .filter(content_type__isnull=True)
-                      .filter(object_id__isnull=True)
-                      .filter(user=user))
+    allmodels_list = get_from_cache(user)
     for role_obj in allmodels_list:
         perm_access = RolePermission.objects.filter(role=role_obj, permission=perm_obj).first()
         if perm_access:
@@ -356,3 +357,6 @@ def assign_permission(user, role_class, permission, access, obj=None):
         )
         perm_obj.access = bool(access)
         perm_obj.save()
+
+    # Cleaning the cache system.
+    delete_from_cache(user, obj)

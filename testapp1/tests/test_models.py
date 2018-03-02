@@ -51,11 +51,12 @@ class ModelsTest(TestCase):
         # Check if the UserRole instance was created.
         ur_count = UserRole.objects.filter(user=self.john).count()
         self.assertEqual(ur_count, 1)
+        self.assertTrue(self.john.has_permission('testapp1.change_user', self.bob))
 
         # Removing the object attached to the UserRole.
         self.bob.delete()
 
-        # Check if the UserRole instance has removed
-        # by the signal.
+        # Check if the UserRole instance has removed by the signal.
         ur_count = UserRole.objects.filter(user=self.john).count()
         self.assertEqual(ur_count, 0)
+        self.assertFalse(self.john.has_permission('testapp1.change_user', self.bob))
