@@ -30,10 +30,15 @@ class RequestView(PermissionMixin, Dispatch):
 
 class ObjectView(PermissionMixin):
     def __init__(self, obj):
-        self.my_object = obj
+        self.object = obj
+
+
+class GetObjectView(PermissionMixin):
+    def __init__(self, obj):
+        self.something = obj
 
     def get_object(self):
-        return self.my_object
+        return self.something
 
 
 class PermissionMixinTest(TestCase):
@@ -72,7 +77,13 @@ class PermissionMixinTest(TestCase):
         perm_string = view.get_permission_string()
         self.assertEqual(perm_string, 'Hello!')
 
+        # Getting via attribute self.object
         view = ObjectView(self.john)
+        perm_obj = view.get_permission_object()
+        self.assertEqual(perm_obj, self.john)
+
+        # Getting via method get_object()
+        view = GetObjectView(self.john)
         perm_obj = view.get_permission_object()
         self.assertEqual(perm_obj, self.john)
 

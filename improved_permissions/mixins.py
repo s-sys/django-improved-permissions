@@ -93,22 +93,29 @@ class PermissionMixin(object):
     to secure them based in permissions.
     """
     permission_string = ""
-    permission_object = None
 
     def get_permission_string(self):
         if self.permission_string != "":
             return self.permission_string
 
-        raise ImproperlyConfigured()
+        raise ImproperlyConfigured(
+            "Provide a 'permission_string' attribute."
+        )
 
     def get_permission_object(self):
-        if self.permission_object:
+        if hasattr(self, 'permission_object'):
             return self.permission_object
+
+        elif hasattr(self, 'object'):
+            return self.object
 
         elif hasattr(self, 'get_object'):
             return self.get_object()
 
-        raise ImproperlyConfigured()
+        raise ImproperlyConfigured(
+            "Provide a 'permission_object' attribute or implement"
+            "a 'get_permission_object' method."
+        )
 
     def check_permission(self):
         return shortcuts.has_permission(
