@@ -56,6 +56,7 @@ class UniqueTogether(RoleMixin, models.Model):
     content = models.TextField()
 
     class Meta:
+        default_permissions = ()
         permissions = [('nothing', 'Nothing!'),]
 
     class RoleOptions:

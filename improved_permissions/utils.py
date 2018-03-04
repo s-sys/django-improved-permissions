@@ -98,13 +98,28 @@ def string_to_permission(perm):
     into a Permission instance.
     """
     from django.contrib.auth.models import Permission
+    from django.core.cache import cache
 
+    # Getting the list of all permissions
+    # from the cache.
+    all_perms = cache.get('permissions')
+
+    # Build the cache dictionary for all
+    # permissions if is not ready yet.
+    if all_perms is None:
+        all_perms = dict()
+        query = Permission.objects.all()
+        for perm_obj in query:
+            key = permission_to_string(perm_obj)
+            all_perms[key] = perm_obj
+        cache.set('permissions', all_perms)
+
+    # Get the Permission instance
+    # from the cache dictionary.
     try:
-        app_label, codename = perm.split('.')
-    except (ValueError, IndexError):  # pragma: no cover
+        return all_perms[perm]
+    except KeyError:
         raise AttributeError
-
-    return Permission.objects.get(content_type__app_label=app_label, codename=codename)
 
 
 def permission_to_string(perm):
