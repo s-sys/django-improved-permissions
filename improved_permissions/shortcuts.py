@@ -267,7 +267,7 @@ def assign_roles(users_list, role_class, obj=None):
         delete_from_cache(user, obj)
 
 
-def remove_role(user, role_class=None, obj=None):
+def remove_role(user=None, role_class=None, obj=None):
     """
     Proxy method to be used for one
     User instance.
@@ -275,7 +275,7 @@ def remove_role(user, role_class=None, obj=None):
     remove_roles([user], role_class, obj)
 
 
-def remove_roles(users_list, role_class=None, obj=None):
+def remove_roles(users_list=None, role_class=None, obj=None):
     """
     Delete all RolePermission objects in the database
     referencing the followling role_class to the
@@ -300,12 +300,16 @@ def remove_roles(users_list, role_class=None, obj=None):
     # to the role class.
     check_my_model(role, obj)
 
-    # Cleaning the cache system.
-    for user in users_list:
-        delete_from_cache(user, obj)
+    if users_list:
+        # Filtering by users.
+        query = query.filter(user__in=users_list)
+
+        # Cleaning the cache system.
+        for user in users_list:
+            delete_from_cache(user, obj)
 
     # Cleaning the database.
-    query.filter(user__in=users_list).delete()
+    query.delete()
 
 
 def has_permission(user, permission, obj=None):

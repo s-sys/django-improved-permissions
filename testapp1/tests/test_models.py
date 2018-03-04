@@ -29,6 +29,12 @@ class ModelsTest(TestCase):
         obj = UserRole.objects.get(user=self.bob)
         self.assertEqual(str(obj), 'bob is Coordenator')
 
+    def test_role_property(self):
+        """ check if the role property works fine """
+        self.john.assign_role(Advisor, self.bob)
+        obj = UserRole.objects.get(user=self.john)
+        self.assertEqual(obj.role, Advisor)
+
     def test_edit_incorrectly(self):
         """
         check if its possible to put 

@@ -55,17 +55,21 @@ def get_roleclass(role_class):
     """
     from improved_permissions.roles import RoleManager
     roles_list = RoleManager.get_roles()
-    if role_class in roles_list:
-        # Already a Role class.
-        return role_class
 
-    elif isinstance(role_class, str):
-        # Trying to get via string.
+    if isinstance(role_class, str):
+        # Trying to get the role class
+        # via string representation.
         for role in roles_list:
             if role.get_class_name() == role_class:
                 return role
 
-    raise RoleNotFound()
+    elif role_class in roles_list:
+        # Already a Role class.
+        return role_class
+
+    raise RoleNotFound(
+        "'%s' is not a registered role class." % role_class
+    )
 
 
 def get_model(model):

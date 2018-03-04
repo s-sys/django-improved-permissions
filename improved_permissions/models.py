@@ -6,7 +6,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from improved_permissions.roles import ALL_MODELS, ALLOW_MODE, RoleManager
+from improved_permissions.exceptions import RoleNotFound
+from improved_permissions.roles import ALL_MODELS, ALLOW_MODE
 from improved_permissions.utils import (get_permissions_list, get_roleclass,
                                         permission_to_string)
 
@@ -52,27 +53,28 @@ class UserRole(models.Model):
             output += ' of {obj}'.format(obj=self.obj)
         return output
 
+    @property
+    def role(self):
+        return get_roleclass(self.role_class)
+
     def clean(self):
-        for role_class in RoleManager.get_roles():
-            if self.role_class == role_class.get_class_name():
-                return
-        raise ValidationError(
-            {'role_class': 'This string representation does not exist as a Role class.'}
-        )
+        try:
+            get_roleclass(self.role_class)
+        except RoleNotFound:
+            raise ValidationError(
+                {'role_class': 'This string representation does not exist as a Role class.'}
+            )
 
     def save(self, *args, **kwargs):  # pylint: disable=arguments-differ,unused-argument
         self.clean()
         super().save()
 
-        # Getting the permissions list.
-        role = get_roleclass(self.role_class)
-
         # non-object roles does not have specific
         # permissions auto created.
-        if role.models == ALL_MODELS:
+        if self.role.models == ALL_MODELS:
             return
 
-        all_perms = get_permissions_list(role.get_models())
+        all_perms = get_permissions_list(self.role.get_models())
 
         # Filtering the permissions based
         # on "allow" or "deny".
@@ -80,16 +82,16 @@ class UserRole(models.Model):
         for perm in all_perms:
             access = None
             perm_s = permission_to_string(perm)
-            if role.get_mode() == ALLOW_MODE:
+            if self.role.get_mode() == ALLOW_MODE:
                 # [Allow Mode]
-                # Put the access as "True" only for the
-                # permissions in allow list.
-                access = True if perm_s in role.allow else False
+                # Put the access as "True" only for
+                # the permissions in allow list.
+                access = True if perm_s in self.role.allow else False
             else:
                 # [Deny Mode]
                 # Put the acces as "False" only for
                 # the permissions in deny list.
-                access = False if perm_s in role.deny else True
+                access = False if perm_s in self.role.deny else True
             role_instances.append(RolePermission(role=self, permission=perm, access=access))
 
         RolePermission.objects.bulk_create(role_instances)

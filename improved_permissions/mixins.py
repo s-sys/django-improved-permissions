@@ -106,7 +106,7 @@ class PermissionMixin(object):
         if hasattr(self, 'permission_object'):
             return self.permission_object
 
-        elif hasattr(self, 'object'):
+        elif hasattr(self, 'object') and self.object is not None:
             return self.object
 
         elif hasattr(self, 'get_object'):

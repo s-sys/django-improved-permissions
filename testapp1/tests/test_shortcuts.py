@@ -209,6 +209,11 @@ class ShortcutsTest(TestCase):
         remove_role(self.julie)
         self.assertFalse(has_permission(self.julie, 'testapp1.add_user'))
 
+        # Remove all roles from the project.
+        assign_roles([self.john, self.mike], Teacher, self.bob)
+        remove_roles()
+        self.assertEqual(get_users(), [])
+
     def test_assign_permissions(self):
         """ test if the permissions assignment works fine """
 
