@@ -21,16 +21,15 @@ def autodiscover():
     on all apps in order to auto-register.
     """
     from importlib import import_module
+    from django.apps import apps
     from django.conf import settings
     from improved_permissions.roles import RoleManager
 
+    # Check if the Permission model
+    # is ready to be used.
     try:
-        # Check if the Permission model
-        # is ready to be used.
-        from django.contrib.auth.models import Permission
-        from django.db.utils import OperationalError
-        Permission.objects.count()
-    except OperationalError:  # pragma: no cover
+        apps.get_model('Permission')
+    except (LookupError, ValueError):  # pragma: no cover
         return
 
     # If any role was registered already,
@@ -227,7 +226,7 @@ def register_cleanup():
     ignore = [UserRole, RolePermission]
     for model in apps.get_models():
         if model not in ignore and hasattr(model, 'id'):
-            post_delete.connect(cleanup_handler, sender=model)
+            post_delete.connect(cleanup_handler, sender=model, dispatch_uid=str(model))
 
 
 def check_my_model(role, obj):
