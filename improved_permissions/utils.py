@@ -1,4 +1,5 @@
 """ permissions utils """
+# pylint: disable=too-many-lines
 import inspect
 
 from improved_permissions.exceptions import (ImproperlyConfigured, NotAllowed,
@@ -182,14 +183,13 @@ def is_unique_together(model):
     return False
 
 
-def inherit_check(role_obj, permission):
+def inherit_check(role, permission):
     """
     Check if the role class has the following
     permission in inherit mode.
     """
     from improved_permissions.roles import ALLOW_MODE
 
-    role = get_roleclass(role_obj.role_class)
     if role.inherit is True:
         if role.get_inherit_mode() == ALLOW_MODE:
             return True if permission in role.inherit_allow else False
@@ -287,13 +287,25 @@ def get_from_cache(user, obj=None):
     data = cache.get(key)
     if data is None:
         query = UserRole.objects.prefetch_related('accesses').filter(user=user)
+
+        # Filtering by object.
         if obj:
             ct_obj = ContentType.objects.get_for_model(obj)
-            query = (query.filter(content_type=ct_obj.id)
-                     .filter(object_id=obj.id))
-        else:
-            query = (query.filter(object_id__isnull=True)
-                     .filter(content_type__isnull=True))
-        data = list(query)
+            query = query.filter(content_type=ct_obj.id).filter(object_id=obj.id)
+
+        # Getting only the required values.
+        query = query.values_list(
+            'role_class',
+            'accesses__permission',
+            'accesses__access'
+        )
+
+        # Transform the query result into
+        # a dictionary.
+        data = dict()
+        for item in query:
+            perms_list = data.get(item[0], [])
+            perms_list.append((item[1], item[2]))
+            data[item[0]] = perms_list
         cache.set(key, data)
     return data

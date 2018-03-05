@@ -322,26 +322,21 @@ def has_permission(user, permission, obj=None):
         stack = list()
         stack.append(obj)
         while stack:
-            # Getting the UserRole instance
-            # for the current object.
+            # Getting the dictionary of permissions
+            # from the cache.
             current_obj = stack.pop(0)
             roles_list = get_from_cache(user, current_obj)
-            for role_obj in roles_list:
+            for role_s, perm_list in roles_list.items():
 
-                # The loop below do not hit the database.
-                # The "get_from_cache" function ensures
-                # that all access information about the
-                # UserRole instance are prefetched in the
-                # first place.
-
-                for ac_obj in role_obj.accesses.all():
-                    if ac_obj.permission == perm_obj:
-                        return ac_obj.access
+                # Check for permissions.
+                for perm_tuple in perm_list:
+                    if perm_tuple[0] == perm_obj.id:
+                        return perm_tuple[1]
 
                 # Now, we are in inherit mode.
                 # We need to check if the Role
                 # allows the inherit.
-                return inherit_check(role_obj, permission)
+                return inherit_check(get_roleclass(role_s), permission)
 
             # Try to look even further
             # for possible parent fields.
@@ -352,17 +347,18 @@ def has_permission(user, permission, obj=None):
     # If nothing was found or the obj was
     # not provided, try now for roles with
     # "models" = ALL_MODELS.
-    allmodels_list = get_from_cache(user)
-    for role_obj in allmodels_list:
+    roles_list = get_from_cache(user)
+    for role_s, perm_list in roles_list.items():
 
-        # Looking for the access information
-        # in the prefetched data.
-        for ac_obj in role_obj.accesses.all():
-            if ac_obj.permission == perm_obj:
-                return ac_obj.access
+        # Check for permissions.
+        for perm_tuple in perm_list:
+            if perm_tuple[0] == perm_obj.id:
+                return perm_tuple[1]
 
-        # Now, we are in inherit mode again.
-        return inherit_check(role_obj, permission)
+        # Now, we are in inherit mode.
+        # We need to check if the Role
+        # allows the inherit.
+        return inherit_check(get_roleclass(role_s), permission)
 
     # If all fails and the user does not have
     # a role class with "ALL_MODELS", we finnaly
