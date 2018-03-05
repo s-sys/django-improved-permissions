@@ -1,10 +1,16 @@
 *~
+
+# Python Compiled Files
 *.pye
 *.pyc
+
+# Database
 *.sqlite3
 
+# Tests
 .coverage
-.venv
-secret_key.txt
-cover
 pylint-report.txt
+cover
+
+# Sphinx
+docs/build
