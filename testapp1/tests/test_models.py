@@ -34,6 +34,7 @@ class ModelsTest(TestCase):
         self.john.assign_role(Advisor, self.bob)
         obj = UserRole.objects.get(user=self.john)
         self.assertEqual(obj.role, Advisor)
+        self.assertEqual(obj.get_verbose_name(), 'Advisor')
 
     def test_edit_incorrectly(self):
         """

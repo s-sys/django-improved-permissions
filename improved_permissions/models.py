@@ -57,6 +57,9 @@ class UserRole(models.Model):
     def role(self):
         return get_roleclass(self.role_class)
 
+    def get_verbose_name(self):
+        return self.role.get_verbose_name()
+
     def clean(self):
         try:
             get_roleclass(self.role_class)

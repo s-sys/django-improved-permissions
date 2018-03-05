@@ -109,7 +109,7 @@ def string_to_permission(perm):
     # permissions if is not ready yet.
     if all_perms is None:
         all_perms = dict()
-        query = Permission.objects.all()
+        query = Permission.objects.select_related('content_type').all()
         for perm_obj in query:
             key = permission_to_string(perm_obj)
             all_perms[key] = perm_obj
