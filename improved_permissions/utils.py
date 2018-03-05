@@ -292,6 +292,8 @@ def get_from_cache(user, obj=None):
         if obj:
             ct_obj = ContentType.objects.get_for_model(obj)
             query = query.filter(content_type=ct_obj.id).filter(object_id=obj.id)
+        else:
+            query = query.filter(content_type__isnull=True).filter(object_id__isnull=True)
 
         # Getting only the required values.
         query = query.values_list(
@@ -308,4 +310,5 @@ def get_from_cache(user, obj=None):
             perms_list.append((item[1], item[2]))
             data[item[0]] = perms_list
         cache.set(key, data)
+
     return data

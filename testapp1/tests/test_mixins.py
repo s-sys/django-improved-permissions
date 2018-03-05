@@ -24,6 +24,8 @@ class MixinsTest(TestCase):
         self.chapter = Chapter.objects.create(title='Very Nice Chapter 1', book=self.book)
         self.paragraph = Paragraph.objects.create(content='Such Text 1', chapter=self.chapter)
 
+        self.another_book = Book.objects.create(title='Very Nice Book 2', library=self.library)
+
         RoleManager.cleanup()
         RoleManager.register_role(Author)
         RoleManager.register_role(Advisor)
@@ -46,6 +48,10 @@ class MixinsTest(TestCase):
         self.assertTrue(self.bob.has_permission('testapp1.add_chapter', self.chapter))
         self.assertTrue(self.bob.has_permission('testapp1.add_paragraph', self.paragraph))
 
+        # Another books are denied.
+        self.assertFalse(self.bob.has_permission('testapp1.add_book', self.another_book))
+
+
         # As the role Author denies 'review', the
         # children will deny as well.
         self.assertFalse(self.bob.has_permission('testapp1.review', self.book))
@@ -58,6 +64,9 @@ class MixinsTest(TestCase):
         self.assertTrue(self.mike.has_permission('testapp1.review', self.book))
         self.assertTrue(self.mike.has_permission('testapp1.review', self.chapter))
         self.assertTrue(self.mike.has_permission('testapp1.review', self.paragraph))
+
+        # Another books are denied.
+        self.assertFalse(self.mike.has_permission('testapp1.review', self.another_book))
 
         # As the role Reviewer only allows 'review', the
         # children will deny as well.

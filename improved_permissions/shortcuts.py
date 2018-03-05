@@ -317,7 +317,6 @@ def has_permission(user, permission, obj=None):
     Return True if the "user" has the "permission".
     """
     perm_obj = string_to_permission(permission)
-
     if obj:
         stack = list()
         stack.append(obj)
