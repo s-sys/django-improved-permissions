@@ -2,7 +2,7 @@ Quick Start
 ===========
 
 
-Creating your first Role Class
+Creating your first role class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 First, supose that you have the following model in your ``models.py``: ::

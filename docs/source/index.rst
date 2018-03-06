@@ -1,5 +1,5 @@
 Welcome to Django Improved Permissions!
-=======================================================
+=======================================
 
 .. toctree::
    :maxdepth: 2
@@ -7,6 +7,8 @@ Welcome to Django Improved Permissions!
 
    setup
    start
+   role
+   shortcuts
    help
 
 
