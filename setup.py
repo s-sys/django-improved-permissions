@@ -11,7 +11,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='django-improved-permissions',
-    version='0.0.13',
+    version='0.0.14',
     packages=[
         'improved_permissions',
         'improved_permissions.migrations',
