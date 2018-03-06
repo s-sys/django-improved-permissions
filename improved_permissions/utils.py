@@ -15,37 +15,50 @@ def is_role(role_class):
     return inspect.isclass(role_class) and issubclass(role_class, Role) and role_class != Role
 
 
+def dip_cache():
+    """
+    Proxy method used to get the cache
+    object belonging to the DIP.
+    """
+    from django.core.cache import caches
+    return caches['default']
+
+
 def autodiscover():
     """
     Find for Role class implementations
     on all apps in order to auto-register.
     """
     from importlib import import_module
-    from django.apps import apps
     from django.conf import settings
     from improved_permissions.roles import RoleManager
 
-    # Check if the Permission model
-    # is ready to be used.
     try:
-        apps.get_model('Permission')
-    except (LookupError, ValueError):  # pragma: no cover
+        # Check if the Permission model
+        # is ready to be used.
+        from django.contrib.auth.models import Permission
+        Permission.objects.count()
+    except:  # pragma: no cover
         return
 
-    # If any role was registered already,
-    # do not perform the autodiscover.
-    if RoleManager.get_roles():  # pragma: no cover
-        return
+    # Remove all references about previous
+    # role classes and erase all cache.
+    RoleManager.cleanup()
+    dip_cache().clear()
 
     # Looking for Role classes in "roles.py".
-    for app_name in settings.INSTALLED_APPS:
+    for app in settings.INSTALLED_APPS:
         try:
-            mod = import_module('{app}.roles'.format(app=app_name))
+            mod = import_module('{app}.roles'.format(app=app))
             rc_list = [obj[1] for obj in inspect.getmembers(mod, is_role)]
             for roleclass in rc_list:
                 RoleManager.register_role(roleclass)
         except ImportError:
             pass
+
+    # Clear the cache again after
+    # all registrations.
+    dip_cache().clear()
 
 
 def get_roleclass(role_class):
@@ -98,11 +111,10 @@ def string_to_permission(perm):
     into a Permission instance.
     """
     from django.contrib.auth.models import Permission
-    from django.core.cache import cache
 
     # Getting the list of all permissions
     # from the cache.
-    all_perms = cache.get('permissions')
+    all_perms = dip_cache().get('permissions')
 
     # Build the cache dictionary for all
     # permissions if is not ready yet.
@@ -112,7 +124,7 @@ def string_to_permission(perm):
         for perm_obj in query:
             key = permission_to_string(perm_obj)
             all_perms[key] = perm_obj
-        cache.set('permissions', all_perms)
+        dip_cache().set('permissions', all_perms)
 
     # Get the Permission instance
     # from the cache dictionary.
@@ -262,10 +274,9 @@ def delete_from_cache(user, obj=None):
     the cache about the user and the
     object passed via arguments.
     """
-    from django.core.cache import cache
 
     key = generate_cache_key(user, obj)
-    cache.delete(key)
+    dip_cache().delete(key)
 
 
 def get_from_cache(user, obj=None):
@@ -276,14 +287,13 @@ def get_from_cache(user, obj=None):
     the Django cache system.
     """
     from django.contrib.contenttypes.models import ContentType
-    from django.core.cache import cache
     from improved_permissions.models import UserRole
 
     # Key preparation.
     key = generate_cache_key(user, obj)
 
     # Check for the cached data.
-    data = cache.get(key)
+    data = dip_cache().get(key)
     if data is None:
         query = UserRole.objects.prefetch_related('accesses').filter(user=user)
 
@@ -308,6 +318,8 @@ def get_from_cache(user, obj=None):
             perms_list = data.get(item[0], [])
             perms_list.append((item[1], item[2]))
             data[item[0]] = perms_list
-        cache.set(key, data)
+
+        # Set the data to the cache.
+        dip_cache().set(key, data)
 
     return data

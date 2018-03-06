@@ -11,7 +11,7 @@ unsafe-load-any-extension=no
 
 [MESSAGES CONTROL]
 confidence=
-disable=no-member,locally-disabled,too-few-public-methods,too-many-ancestors,keyword-arg-before-vararg
+disable=bare-except,no-member,locally-disabled,too-few-public-methods,too-many-ancestors,keyword-arg-before-vararg
 enable=
 
 [REPORTS]

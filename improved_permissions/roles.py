@@ -35,8 +35,10 @@ class RoleManager(object):
 
         # Check if is actually a role class.
         if not is_role(new_class):
-            raise ImproperlyConfigured('"{object}" is not a class inherited '
-                                       'from Role.'.format(object=str(new_class)))
+            raise ImproperlyConfigured(
+                '"%s" is not a class inherited '
+                'from Role.' % str(new_class)
+            )
 
         # Looking for name conflits or if this
         # class was already registered before.
@@ -44,12 +46,17 @@ class RoleManager(object):
         for current_class in cls.__ROLE_CLASSES_LIST:
             current_name = current_class.get_class_name()
             if current_class == new_class:
-                raise ImproperlyConfigured('"{name}" was already registered as '
-                                           'a valid Role class.'.format(name=new_name))
+                raise ImproperlyConfigured(
+                    '"%s" was already registered as '
+                    'a valid Role class.' % new_name
+                )
+
             elif current_name == new_name:
-                raise ImproperlyConfigured('"Another role was already defined using '
-                                           '"{name}". Choose another name for this R'
-                                           'ole class.'.format(name=current_name))
+                raise ImproperlyConfigured(
+                    '"Another role was already defined using '
+                    '"%s". Choose another name for this Role '
+                    'class.' % current_name
+                )
 
         cls.__validate(new_class)
         cls.__ROLE_CLASSES_LIST.append(new_class)
@@ -83,8 +90,10 @@ class RoleManager(object):
 
         # Check for "verbose_name" declaration.
         if not hasattr(new_class, 'verbose_name'):
-            raise ImproperlyConfigured('Provide a "verbose_name" declaration to the '
-                                       'Role class "%s".' % name)
+            raise ImproperlyConfigured(
+                'Provide a "verbose_name" definition '
+                'to the Role class "%s".' % name
+            )
 
         name = new_class.get_verbose_name()
 
@@ -116,9 +125,10 @@ class RoleManager(object):
             models_isvalid = False
 
         if not models_isvalid:
-            raise ImproperlyConfigured('Provide a list of Models classes via '
-                                       'declaration of "models" to the Role '
-                                       'class "%s".' % name)
+            raise ImproperlyConfigured(
+                'Provide a list of Models classes via definition '
+                'of "models" to the Role class "%s".' % name
+            )
 
         # Role classes with "models" = ALLMODELS
         # does not use allow/deny. In this case,
@@ -151,9 +161,11 @@ class RoleManager(object):
 
         # XOR operation.
         if c_allow and c_deny or not c_allow and not c_deny:
-            raise ImproperlyConfigured('Provide either "%s" or "%s" when inherit=True'
-                                       ' or models=ALL_MODELS for the Role "%s".'
-                                       '' % (allow_field, deny_field, name))
+            raise ImproperlyConfigured(
+                'Provide either "%s" or "%s" when inherit=True'
+                ' or models=ALL_MODELS for the Role "%s".'
+                '' % (allow_field, deny_field, name)
+            )
 
         if c_allow and isinstance(getattr(new_class, allow_field), list):
             perms_list = getattr(new_class, allow_field)
@@ -163,8 +175,10 @@ class RoleManager(object):
             perms_list = getattr(new_class, deny_field)
             result = DENY_MODE
         else:
-            raise ImproperlyConfigured('"%s" or "%s" must to be a list in the Role '
-                                       '"%s".' % (allow_field, deny_field, name))
+            raise ImproperlyConfigured(
+                '"%s" or "%s" must to be a list in the Role '
+                '"%s".' % (allow_field, deny_field, name)
+            )
 
         # Check if the permissions given via "inherit_allow"
         # or "inherit_deny" exists in the Permission database.
@@ -173,9 +187,9 @@ class RoleManager(object):
             try:
                 string_to_permission(perm)
             except (AttributeError, Permission.DoesNotExist):
-                raise ImproperlyConfigured('"%s" does not exist '
-                                           'in the Permission databa'
-                                           'se.' % perm)
+                raise ImproperlyConfigured(
+                    '"%s" does not exist in the Permission database.' % perm
+                )
         # Return the mode.
         return result
 

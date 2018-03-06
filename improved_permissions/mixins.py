@@ -113,7 +113,7 @@ class PermissionMixin(object):
             return self.get_object()
 
         raise ImproperlyConfigured(
-            "Provide a 'permission_object' attribute or implement"
+            "Provide a 'permission_object' attribute or implement "
             "a 'get_permission_object' method."
         )
 
