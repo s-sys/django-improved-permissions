@@ -8,3 +8,4 @@ pylint-plugin-utils==0.2.6
 pytz==2018.3
 six==1.11.0
 wrapt==1.10.11
+coverage==4.5.1
