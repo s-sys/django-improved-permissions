@@ -48,9 +48,11 @@ def get_user(role_class=None, obj=None):
 
     users_set = set(selected)
     if len(users_set) > 1:
-        raise NotAllowed('Multiple unique roles was found using '
-                         'the function get_user. Use get_users i'
-                         'nstead.')
+        raise NotAllowed(
+            'Multiple unique roles was found using '
+            'the function get_user.  Use get_users '
+            'instead.'
+        )
     if len(users_set) == 1:
         return selected[0]
     return None
@@ -226,6 +228,7 @@ def assign_roles(users_list, role_class, obj=None):
     """
     users_set = set(users_list)
     role = get_roleclass(role_class)
+    name = role.get_verbose_name()
 
     # Check if object belongs
     # to the role class.
@@ -233,11 +236,15 @@ def assign_roles(users_list, role_class, obj=None):
 
     # If no object is provided but the role needs specific models.
     if not obj and role.models != ALL_MODELS:
-        raise InvalidRoleAssignment()
+        raise InvalidRoleAssignment(
+            'The role "%s" must be assigned with a object.' % name
+        )
 
     # If a object is provided but the role does not needs a object.
     if obj and role.models == ALL_MODELS:
-        raise InvalidRoleAssignment()
+        raise InvalidRoleAssignment(
+            'The role "%s" must not be assigned with a object.' % name
+        )
 
     # Check if the model accepts multiple roles
     # attached using the same User instance.
@@ -245,17 +252,26 @@ def assign_roles(users_list, role_class, obj=None):
         for user in users_set:
             has_user = get_roles(user=user, obj=obj)
             if has_user:
-                raise InvalidRoleAssignment()
+                raise InvalidRoleAssignment(
+                    'The user "%s" already has a role attached '
+                    'to the object "%s".' % (user, obj)
+                )
 
     if role.unique is True:
         # If the role is marked as unique but multiple users are provided.
         if len(users_list) > 1:
-            raise InvalidRoleAssignment()
+            raise InvalidRoleAssignment(
+                'Multiple users were provided using "%s", '
+                'but it is marked as unique.' % name
+            )
 
         # If the role is marked as unique but already has an user attached.
         has_user = get_users(role_class=role, obj=obj)
         if has_user:
-            raise InvalidRoleAssignment()
+            raise InvalidRoleAssignment(
+                'The object "%s" already has a "%s" attached '
+                'and it is marked as unique.' % (obj, name)
+            )
 
     for user in users_set:
         ur_instance = UserRole(role_class=role.get_class_name(), user=user)

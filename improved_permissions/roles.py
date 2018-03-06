@@ -85,26 +85,54 @@ class RoleManager(object):
         was properly defined in the
         new Role class.
         """
-
         name = new_class.get_class_name()
 
-        # Check for "verbose_name" declaration.
+        # Check for "verbose_name" definition.
         if not hasattr(new_class, 'verbose_name'):
             raise ImproperlyConfigured(
                 'Provide a "verbose_name" definition '
                 'to the Role class "%s".' % name
             )
 
+        # Check if the atribute "models" is
+        # defined correctly.
+        cls.__validate_models(new_class)
+
+        # Role classes with "models" = ALLMODELS
+        # does not use allow/deny. In this case,
+        # all permissions must be specified in
+        # "inherit_allow" and "inherit_deny".
+        if new_class.models != ALL_MODELS:
+            new_class.MODE = cls.__validate_allow_deny(new_class, 'allow', 'deny')
+
+        # Ensuring that "inherit" exists.
+        # Default: False
+        if not hasattr(new_class, 'inherit') or not isinstance(new_class.inherit, bool):
+            new_class.inherit = False
+
+        if new_class.inherit is True:
+            new_class.INHERIT_MODE = cls.__validate_allow_deny(new_class, 'inherit_allow', 'inherit_deny')
+
+        # Ensuring that "unique" exists.
+        # Default: False
+        if not hasattr(new_class, 'unique') or not isinstance(new_class.unique, bool):
+            new_class.unique = False
+
+    @classmethod
+    def __validate_models(cls, new_class):
+        """
+        Check if the attribute "models" is a valid list
+        of Django models or the constant ALL_MODELS.
+        """
         name = new_class.get_verbose_name()
 
-        # Check if "models" is a valid list of Django models or ALL_MODELS.
         models_isvalid = True
         if hasattr(new_class, 'models'):
             if isinstance(new_class.models, list):
                 # Check for every item in the "models" list.
                 valid_list = list()
                 for model in new_class.models:
-                    # Get the model class or "app_label.model"
+                    # Get the model class or "app_label.model".
                     model_class = get_model(model)
                     if model_class:
                         valid_list.append(model_class)
@@ -130,29 +158,13 @@ class RoleManager(object):
                 'of "models" to the Role class "%s".' % name
             )
 
-        # Role classes with "models" = ALLMODELS
-        # does not use allow/deny. In this case,
-        # all permissions must be specified in
-        # "inherit_allow" and "inherit_deny".
-        if new_class.models != ALL_MODELS:
-            new_class.MODE = cls.__validate_allow_deny(new_class, 'allow', 'deny')
-
-        # Ensuring that "inherit" exists.
-        # Default: False
-        if not hasattr(new_class, 'inherit') or not isinstance(new_class.inherit, bool):
-            new_class.inherit = False
-
-        if new_class.inherit is True:
-            new_class.INHERIT_MODE = cls.__validate_allow_deny(new_class, 'inherit_allow', 'inherit_deny')
-
-        # Ensuring that "unique" exists.
-        # Default: False
-        if not hasattr(new_class, 'unique') or not isinstance(new_class.unique, bool):
-            new_class.unique = False
-
     @classmethod
     def __validate_allow_deny(cls, new_class, allow_field, deny_field):
-
+        """
+        This method validates the set attributes "allow/inherit_allow"
+        and "deny/inherit_deny", checking if their values are a valid
+        list of permissions in string representation.
+        """
         name = new_class.get_verbose_name()
 
         # Checking for "allow" and "deny" fields
@@ -232,8 +244,9 @@ class Role(object):
         cls.__protect()
         if cls.inherit is True:
             return cls.INHERIT_MODE
-        else:
-            raise NotAllowed()
+        raise NotAllowed(
+            'The role "%s" is not marked as unique.' % cls.get_verbose_name()
+        )
 
     @classmethod
     def get_models(cls):
@@ -246,12 +259,3 @@ class Role(object):
     def is_my_model(cls, model):
         cls.__protect()
         return model._meta.model in cls.get_models()  # pylint: disable=protected-access
-
-
-class SuperUser(Role):
-    """
-    Super User Role
-    """
-    verbose_name = 'Super User'
-    models = ALL_MODELS
-    inherit_deny = []

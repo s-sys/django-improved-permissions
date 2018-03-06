@@ -1,0 +1,12 @@
+language: python
+python:
+  3.5
+git:
+  depth: false
+install:
+  pip install -r permproject/requirements/ci.txt
+script:
+  pylint --load-plugins=pylint_django **/*.py
+  coverage run manage.py test --failfast
+after_success:
+  coverage report
