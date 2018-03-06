@@ -35,10 +35,26 @@ Remove the role and your permissions of the object from all users in the list.
 Getters
 ^^^^^^^
 
+.. function:: get_role(user, obj=None)
+
+Get the unique role class of the user related to the object.
+
+.. function:: get_roles(user, obj=None)
+
+Get all role classes of the user related to the object.
+
+.. function:: get_user(role_class=None, obj=None)
+
+Get the unique user instance according to the object.
+
 .. function:: get_user(role_class=None, obj=None)
 
 Get the unique user instance according to the object.
 
 .. function:: get_users(role_class=None, obj=None)
 
-Get the all users instances according to the object.
+Get all users instances according to the object.
+
+.. function:: get_objects(user, role_class=None, model=None)
+
+Get all objects related to the user.
