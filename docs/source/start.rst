@@ -34,7 +34,7 @@ Now, create a new file inside of any app of your project named ``roles.py`` and 
         models = [Book]
         allow = ['myapp.review']
 
-Every time your project starts, we use an ``autodiscover`` in order to validade and register your role classes automatically. So, don't worry to do anything else.
+Every time your project starts, we use an ``autodiscover`` in order to validate and register your role classes automatically. So, don't worry to do anything else.
 
 Using the shortcuts
 ^^^^^^^^^^^^^^^^^^^
