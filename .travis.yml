@@ -1,12 +1,19 @@
 language: python
-python:
-  3.5
+python: 3.5
 git:
   depth: false
 install:
-  - pip install -r permproject/requirements/ci.txt
+- pip install -r permproject/requirements/ci.txt
 script:
-  - pylint --load-plugins=pylint_django **/*.py
-  - coverage run manage.py test
+- pylint --load-plugins=pylint_django **/*.py
+- coverage run manage.py test
 after_success:
-  - coverage report
+- coverage report
+deploy:
+  provider: pypi
+  user: gabrielbiasi
+  password:
+    secure: IxVGQx7jqbkfD6JZwVRGN8qMeXph8SDAqv8ibhxb9i2TIB6vZorzv4cVjkkeEhxc1850GF4RtE92rmu177+xd77M905IcqRk/UCV5cFpHWjuVs2b7L/4ihmbW4xT92foF7royIIGSkpKg1wGHW74vLnaDoEHiJ8JTptxLoq7R65V9PmJ/KlxCt/tR9Mio7Ck8BBTKihnYYV5cUHt9nlvkf7RcnTcy9NAhw82r2GwHozluE/J1q1ZdrYzhBRj/h94WYfEUoCm+NdfxAhs6GSW72GCmccrfAvrV7iVt/910EaQ/5f2B8yIbrkvlu9zOR+S+Vu2fv7uNOFOnZOpojXiwYm1+z7FphT8eJR3oSoGVOnHUg//wm9ye3jdRW9W0SUjPATlbaXW5rzBTbhuobzYTCOKUJn22gN5ZAL7yIGTxpCOsDDw+SCc6bZrFJsb2M3+aSTjy/1RO5nwcNXWtlrorTwXPuEtC//srFZL8SQKBOMrh8zNMcvokVicNeJwdHJG90NK5nULa5ET9eEHLFLmUVfSyuDFZsUbMilLpbst29XmPYOwG3P9dSqTM47bwslEzdVE962HJcwJ6Ml+4Sy9Eq0GQpuQv+qfc4jPjg4n0xfb6qHaRkI92710Ztg4WIy2W+ntZgejESRmyvHHzrTs9O34naEMGsukeJZ0CaFRNGE=
+  on:
+    branch: master
+    tags: true

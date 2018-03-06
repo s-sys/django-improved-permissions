@@ -11,14 +11,17 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='django-improved-permissions',
-    version='0.0.12',
-    packages=find_packages(),
+    version='0.0.13',
+    packages=[
+        'improved_permissions',
+        'improved_permissions.migrations',
+        'improved_permissions.templatetags',
+    ],
     include_package_data=True,
     license='MIT License',
     description='A Django app to handle all kinds of permissions and roles.',
     long_description=README,
-    # download_url = 'https://github.com/gabrielbiasi/django-improved-permissions/archive/0.0.3.zip',
-    # url='https://github.com/gabrielbiasi/django-improved-permissions/tree/0.0.3',
+    url='https://github.com/gabrielbiasi/django-improved-permissions',
     author='Gabriel de Biasi',
     author_email='biasi131@gmail.com',
     classifiers=[
