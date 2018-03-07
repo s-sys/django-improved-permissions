@@ -1,8 +1,10 @@
 """ permissions mixins """
+from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 from django.db import models
 
 from improved_permissions import shortcuts
+from improved_permissions.models import UserRole
 
 
 class UserRoleMixin(models.Model):
@@ -54,6 +56,9 @@ class RoleMixin(models.Model):
     omitting the "obj" argument, using itself
     to fill it.
     """
+
+    roles = GenericRelation(UserRole)
+
     class Meta:
         abstract = True
 

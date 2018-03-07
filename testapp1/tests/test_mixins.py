@@ -107,6 +107,10 @@ class MixinsTest(TestCase):
         result = self.book.get_users(Author)
         self.assertEqual(result, [self.john, self.bob])
 
+        # Trying to use the reverse GerericRelation.
+        reverse = list(self.book.roles.values_list('user', flat=True))
+        self.assertEqual(reverse, [self.bob.id, self.john.id])
+
         # Get all users with any role to "library".
         result = self.library.get_users()
         self.assertEqual(result, [self.mike])
