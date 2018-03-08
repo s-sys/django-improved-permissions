@@ -9,6 +9,11 @@ script:
 - coverage run manage.py test
 after_success:
 - coverage report
+- coverage html
+addons:
+  artifacts:
+    paths:
+      - cover
 deploy:
   provider: pypi
   user: gabrielbiasi
