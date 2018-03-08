@@ -69,14 +69,14 @@ Now, to the terminal to make some tests: ::
     book = Book.objects.create(title='New Book', content='Much content', my_library=library)
 
     # John has nothing :(
-    has_permission(john, 'book.read_book', book)
+    has_permission(john, 'myapp.read_book', book)
     >>> False
 
     # John receives an role attached to "library".
     assign_role(john, LibraryManager, library)
 
     # Now, we got True by permission inheritance.
-    has_permission('book.read_book', book)
+    has_permission('myapp.read_book', book)
     >>> True
 
 The class ``RoleOptions`` has the following attributes:

@@ -1,7 +1,7 @@
 Shortcuts
 =========
 
-These functions are at the heart of this project. Everything you need to do in your project is implemented in the ``shortcuts`` module.
+These functions are the heart of this app. Everything you need to do in your project is implemented in the ``shortcuts`` module.
 
 .. note:: Do not rush your project using the shortcuts directly. We have an easiest way to use these shorcuts using **mixins** in your models. Click here to check it out. 
 

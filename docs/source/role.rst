@@ -21,7 +21,7 @@ The ``Role`` class has some attributes that are required to be properly register
 ===================== ========================== ===
 Attribute             Type                       Description
 ===================== ========================== ===
-``verbose_name``      ``string``                 Used to print some information about the role.
+``verbose_name``      ``str``                    Used to print some information about the role.
 ``models``            ``list`` or ``ALL_MODELS`` Defines which models this role can be attached.
 ``allow`` or ``deny`` ``list``                   Defines which permissions should be allowed or denied. You must define only one of them.
 ===================== ========================== ===
@@ -44,7 +44,7 @@ Public Methods
 
 We also have some methods.
 
-.. function:: get_verbose_name(): string
+.. function:: get_verbose_name(): str
 
 Returns the ``verbose_name`` attribute.
 
