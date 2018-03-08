@@ -4,7 +4,9 @@ from django.test import TestCase
 from improved_permissions.exceptions import (ImproperlyConfigured,
                                              InvalidRoleAssignment)
 from improved_permissions.roles import ALL_MODELS, Role, RoleManager
+from improved_permissions.utils import autodiscover, get_config
 from testapp1.models import MyUser
+from testapp1.other_roles import AnotherRole
 from testapp1.roles import Advisor
 
 
@@ -48,6 +50,21 @@ class RoleManagerTest(TestCase):
 
     def setUp(self):
         RoleManager.cleanup()
+
+    def test_another_module(self):
+        """ test if the config dictionary works fine """
+
+        # Testing module name.
+        new_ipc = {'MODULE': 'other_roles'}
+        with self.settings(IMPROVED_PERMISSIONS_CONFIGS=new_ipc):
+            autodiscover()
+            roles_list = RoleManager.get_roles()
+            self.assertEqual(roles_list, [AnotherRole])
+
+        # Testing the case if the dictionary does not exists.
+        with self.settings(IMPROVED_PERMISSIONS_CONFIGS=None):
+            self.assertEqual(get_config('CACHE', 'new_default'), 'new_default')
+            self.assertEqual(get_config('MODULE', 'new_roles'), 'new_roles')
 
     def test_incorrect_implementations(self):
         """ test all exceptions on validate method """

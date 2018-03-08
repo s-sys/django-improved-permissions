@@ -130,3 +130,8 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 AUTH_USER_MODEL = 'testapp1.MyUser'
+
+IMPROVED_PERMISSIONS_CONFIGS = {
+    'CACHE': 'default',
+    'MODULE': 'roles',
+}

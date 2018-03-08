@@ -15,13 +15,29 @@ def is_role(role_class):
     return inspect.isclass(role_class) and issubclass(role_class, Role) and role_class != Role
 
 
+def get_config(key, default):
+    """
+    Get the dictionary "IMPROVED_PERMISSIONS_CONFIGS"
+    from the settings module.
+    Return "default" if "key" is not present in
+    the dictionary.
+    """
+    from django.conf import settings
+
+    config_dict = getattr(settings, 'IMPROVED_PERMISSIONS_CONFIGS', None)
+    if config_dict:
+        if key in config_dict:
+            return config_dict[key]
+    return default
+
+
 def dip_cache():
     """
     Proxy method used to get the cache
     object belonging to the DIP.
     """
     from django.core.cache import caches
-    return caches['default']
+    return caches[get_config('CACHE', 'default')]
 
 
 def autodiscover():
@@ -47,9 +63,10 @@ def autodiscover():
     dip_cache().clear()
 
     # Looking for Role classes in "roles.py".
+    module = get_config('MODULE', 'roles')
     for app in settings.INSTALLED_APPS:
         try:
-            mod = import_module('{app}.roles'.format(app=app))
+            mod = import_module('%s.%s' % (app, module))
             rc_list = [obj[1] for obj in inspect.getmembers(mod, is_role)]
             for roleclass in rc_list:
                 RoleManager.register_role(roleclass)
@@ -164,13 +181,14 @@ def get_parents(model):
     as "parents" of a given model instance.
     """
     result = list()
-    if hasattr(model, 'RoleOptions'):
-        options = getattr(model, 'RoleOptions')
-        if hasattr(options, 'permission_parents'):
-            parents_list = getattr(options, 'permission_parents')
+    options = getattr(model, 'RoleOptions', None)
+    if options:
+        parents_list = getattr(options, 'permission_parents', None)
+        if parents_list:
             for parent in parents_list:
-                if hasattr(model, parent):
-                    result.append(getattr(model, parent))
+                parent_attr = getattr(model, parent, None)
+                if parent_attr:
+                    result.append(parent_attr)
                 else:
                     raise ParentNotFound('The field "%s" was not found in the '
                                          'model "%s".' % (parent, str(model)))
@@ -183,12 +201,12 @@ def is_unique_together(model):
     accept multiple roles attached to
     it using the user instance.
     """
-    if hasattr(model, 'RoleOptions'):
-        options = getattr(model, 'RoleOptions')
-        if hasattr(options, 'unique_together'):
-            ut_value = getattr(options, 'unique_together')
-            if isinstance(ut_value, bool):
-                return ut_value
+    options = getattr(model, 'RoleOptions', None)
+    if options:
+        unique = getattr(options, 'unique_together', None)
+        if unique:
+            if isinstance(unique, bool):
+                return unique
             raise ImproperlyConfigured('The field "unique_together" of "%s" must '
                                        'be a bool value.' % (str(model)))
     return False
