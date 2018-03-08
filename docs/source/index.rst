@@ -9,6 +9,8 @@ Welcome to Django Improved Permissions!
    start
    role
    shortcuts
+   mixins
+   inheritance
    help
 
 
