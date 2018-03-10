@@ -131,7 +131,7 @@ STATIC_URL = '/static/'
 
 AUTH_USER_MODEL = 'testapp1.MyUser'
 
-IMPROVED_PERMISSIONS_CONFIGS = {
+IMPROVED_PERMISSIONS_SETTINGS = {
     'CACHE': 'default',
     'MODULE': 'roles',
 }

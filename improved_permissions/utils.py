@@ -17,14 +17,14 @@ def is_role(role_class):
 
 def get_config(key, default):
     """
-    Get the dictionary "IMPROVED_PERMISSIONS_CONFIGS"
+    Get the dictionary "IMPROVED_PERMISSIONS_SETTINGS"
     from the settings module.
     Return "default" if "key" is not present in
     the dictionary.
     """
     from django.conf import settings
 
-    config_dict = getattr(settings, 'IMPROVED_PERMISSIONS_CONFIGS', None)
+    config_dict = getattr(settings, 'IMPROVED_PERMISSIONS_SETTINGS', None)
     if config_dict:
         if key in config_dict:
             return config_dict[key]
