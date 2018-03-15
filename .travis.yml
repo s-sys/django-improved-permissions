@@ -10,15 +10,11 @@ script:
 after_success:
 - coverage report
 - coverage html
-addons:
-  artifacts:
-    paths:
-      - cover
 deploy:
   provider: pypi
-  user: gabrielbiasi
+  user: ssys
   password:
-    secure: IxVGQx7jqbkfD6JZwVRGN8qMeXph8SDAqv8ibhxb9i2TIB6vZorzv4cVjkkeEhxc1850GF4RtE92rmu177+xd77M905IcqRk/UCV5cFpHWjuVs2b7L/4ihmbW4xT92foF7royIIGSkpKg1wGHW74vLnaDoEHiJ8JTptxLoq7R65V9PmJ/KlxCt/tR9Mio7Ck8BBTKihnYYV5cUHt9nlvkf7RcnTcy9NAhw82r2GwHozluE/J1q1ZdrYzhBRj/h94WYfEUoCm+NdfxAhs6GSW72GCmccrfAvrV7iVt/910EaQ/5f2B8yIbrkvlu9zOR+S+Vu2fv7uNOFOnZOpojXiwYm1+z7FphT8eJR3oSoGVOnHUg//wm9ye3jdRW9W0SUjPATlbaXW5rzBTbhuobzYTCOKUJn22gN5ZAL7yIGTxpCOsDDw+SCc6bZrFJsb2M3+aSTjy/1RO5nwcNXWtlrorTwXPuEtC//srFZL8SQKBOMrh8zNMcvokVicNeJwdHJG90NK5nULa5ET9eEHLFLmUVfSyuDFZsUbMilLpbst29XmPYOwG3P9dSqTM47bwslEzdVE962HJcwJ6Ml+4Sy9Eq0GQpuQv+qfc4jPjg4n0xfb6qHaRkI92710Ztg4WIy2W+ntZgejESRmyvHHzrTs9O34naEMGsukeJZ0CaFRNGE=
+    secure: MD/NIxEIoVXZEXQ/b/xiYQgZuMSoKDgX9sDYBVFNcOiShEv6NklVIzv4sMYkaF6vYWsO+gdgFKZeyYvk4OPy87zjJmyztXiiXjpsTHT3+Z5ZG/YzBd6XKzhh3Xk8mgiUbYEAWzNBqM42BdjrJ0lH3HXFyZtW1XvtLjLcCzT2by+EGdOI8BxBA0ZEAQo7kCRfk3OXAFwAnl/hYy115VxTck7whbwU9fDniro5JT9IiIEO8KmaSN8lKbvM58VR1H/+fTLiryd2H+OiGCKLCmsp0KkPgyQ0Dcat3o4WlsDvaMWxvQbE+ycXkoT/EElVNsB6iMj2fZIlzNt2tDaHMQ6bB9Re/hvxTTDlPgVbONsiG4ZGVwdDF9W1gqiEaRnwUqVtExMWsyxkQkhhs57Pv03weLADkt6cHmHmAkqs1bhBMBmdg3UA/h1hODT9FiE+5Ry76AFele0iG0ILz316URPgEjwuFsSi4kMbnpVhK3nBFBjCiQZSdK6ibWjtqCe4l2IoWtLNV/64epGk5wG+hamNn9md2eE7tiqmiy2+0wAEzO4fyWq4n1YZCWj3cvCgcVFpOwJXKx4cNCAUeiCk1uuuceyJ+y+dxo38kMKtAVerSI2sitJd3n6pF1pK0mTAr4iMz+DtZ1D09IGGBUCrlur3eBE56pYPg++2/3jOugoW/f8=
   on:
     branch: master
     tags: true

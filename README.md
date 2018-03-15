@@ -1,6 +1,6 @@
 # Django Improved Permissions
 
-[![Build Status](https://travis-ci.org/gabrielbiasi/django-improved-permissions.svg?branch=master)](https://travis-ci.org/gabrielbiasi/django-improved-permissions)
+[![Build Status](https://travis-ci.org/s-sys/django-improved-permissions.svg?branch=master)](https://travis-ci.org/s-sys/django-improved-permissions)
 [![Documentation Status](https://readthedocs.org/projects/django-improved-permissions/badge/?version=latest)](http://django-improved-permissions.readthedocs.io/en/latest/?badge=latest)
 
 Django Improved Permissions (DIP) is a django application made to make django's default permission system more robust. Here are some highlights:
