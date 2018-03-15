@@ -19,7 +19,7 @@ on_rtd = os.environ.get('READTHEDOCS') == 'True'
 # -- Project information -----------------------------------------------------
 
 project = 'Django Improved Permissions'
-copyright = '2018, S-SYS Sistemas e Soluções Tecnológicas'
+copyright = '2018, S-SYS'
 author = 'Gabriel de Biasi'
 
 # The short X.Y version
