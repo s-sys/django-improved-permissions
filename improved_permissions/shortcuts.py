@@ -339,7 +339,7 @@ def has_permission(user, permission, obj=None):
             # from the cache.
             current_obj = stack.pop(0)
             roles_list = get_from_cache(user, current_obj)
-            for role_s, perm_list in roles_list.items():
+            for role_s, perm_list in roles_list:
 
                 # Check for permissions.
                 for perm_tuple in perm_list:
@@ -361,7 +361,7 @@ def has_permission(user, permission, obj=None):
     # not provided, try now for roles with
     # "models" = ALL_MODELS.
     roles_list = get_from_cache(user)
-    for role_s, perm_list in roles_list.items():
+    for role_s, perm_list in roles_list:
 
         # Check for permissions.
         for perm_tuple in perm_list:

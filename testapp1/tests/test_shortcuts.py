@@ -24,6 +24,7 @@ class Teacher(Role):
     verbose_name = "Teacher"
     models = [MyUser]
     deny = ['testapp1.delete_user']
+    ranking = 1
 
 
 class Secretary(Role):
@@ -176,8 +177,10 @@ class ShortcutsTest(TestCase):
         self.assertTrue(has_permission(self.julie, 'testapp1.add_user', self.bob))
         self.assertFalse(has_permission(self.julie, 'testapp1.change_user', self.bob))
 
-        # assign_role(self.john, Advisor, self.bob)
-        # self.assertTrue(has_permission(self.john, 'testapp1.delete_user', self.bob))
+        # john has both Advisor and Teacher now,
+        # but Advisor has better ranking.
+        assign_role(self.john, Advisor, self.bob)
+        self.assertTrue(has_permission(self.john, 'testapp1.delete_user', self.bob))
 
     def test_template_tags(self):
         """ test if template tags work fine """
