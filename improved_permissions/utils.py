@@ -280,9 +280,11 @@ def generate_cache_key(user, obj=None):
     from hashlib import md5
 
     key = md5()
-    key.update(str(user).encode('utf-8'))
+    str_user = str(user.__class__) + str(user) + str(user.id)
+    key.update(str_user.encode('utf-8'))
     if obj:
-        key.update(str(obj).encode('utf-8'))
+        str_obj = str(obj.__class__) + str(obj) + str(obj.id)
+        key.update(str_obj.encode('utf-8'))
     return key.hexdigest()
 
 
