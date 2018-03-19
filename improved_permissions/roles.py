@@ -118,6 +118,11 @@ class RoleManager(object):
         if not hasattr(new_class, 'unique') or not isinstance(new_class.unique, bool):
             new_class.unique = False
 
+        # Ensuring that "ranking" exists.
+        # Default: 0
+        if not hasattr(new_class, 'ranking') or not isinstance(new_class.ranking, int):
+            new_class.ranking = 0
+
     @classmethod
     def __validate_models(cls, new_class):
         """

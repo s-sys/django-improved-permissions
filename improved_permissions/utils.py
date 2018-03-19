@@ -342,6 +342,10 @@ def get_from_cache(user, obj=None):
             perms_list.append((item[1], item[2]))
             data[item[0]] = perms_list
 
+        # Ordering the tuple (role_class, perms_list)
+        # by their ranking values.
+        data = sorted(data.items(), key=lambda role: get_roleclass(role[0]).ranking)
+
         # Set the data to the cache.
         dip_cache().set(key, data)
 
