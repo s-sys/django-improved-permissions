@@ -73,7 +73,7 @@ class ShortcutsTest(TestCase):
         assign_roles([self.john, self.mike], Teacher, self.bob)
 
         users_list = get_users(Teacher, self.bob)
-        self.assertEqual(users_list, [self.john, self.mike])
+        self.assertEqual(list(users_list), [self.john, self.mike])
 
         with self.assertRaises(NotAllowed):
             assign_role(self.john, Teacher, Chapter)
@@ -91,7 +91,7 @@ class ShortcutsTest(TestCase):
             assign_role(self.john, Advisor)
 
         users_list = get_users(Coordenator)
-        self.assertEqual(users_list, [self.john])
+        self.assertEqual(list(users_list), [self.john])
 
     def test_assign_roles_unique(self):
         """ test if 'unique' attribute works fine """
@@ -121,14 +121,14 @@ class ShortcutsTest(TestCase):
             assign_role(self.mike, Advisor, self.julie)
 
         users_list = get_users(Advisor)
-        self.assertEqual(users_list, [self.john, self.mike])
+        self.assertEqual(list(users_list), [self.john, self.mike])
 
     def test_unique_together(self):
         """ test if models marked as unique_together works fine """
 
         # Nothing attached to the object.
         users_list = self.unique.get_users()
-        self.assertEqual(users_list, [])
+        self.assertEqual(list(users_list), [])
 
         # Confirm that the object was attached to the user.
         self.mike.assign_role(UniqueOwner, self.unique)
@@ -199,13 +199,13 @@ class ShortcutsTest(TestCase):
         remove_role(self.john, Teacher, self.bob)
 
         users_list = get_users(Teacher)
-        self.assertEqual(users_list, [])
+        self.assertEqual(list(users_list), [])
 
         assign_roles([self.john, self.mike], Teacher, self.bob)
         remove_roles([self.john, self.mike], Teacher)
 
         users_list = get_users(Teacher)
-        self.assertEqual(users_list, [])
+        self.assertEqual(list(users_list), [])
 
         assign_role(self.julie, Coordenator)
         self.assertTrue(has_permission(self.julie, 'testapp1.add_user'))
@@ -215,7 +215,8 @@ class ShortcutsTest(TestCase):
         # Remove all roles from the project.
         assign_roles([self.john, self.mike], Teacher, self.bob)
         remove_roles()
-        self.assertEqual(get_users(), [])
+        self.assertEqual(list(get_users(Coordenator)), [])
+        self.assertEqual(list(get_users(Teacher)), [])
 
     def test_assign_permissions(self):
         """ test if the permissions assignment works fine """
