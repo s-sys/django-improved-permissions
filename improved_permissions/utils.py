@@ -131,7 +131,8 @@ def string_to_permission(perm):
 
     # Getting the list of all permissions
     # from the cache.
-    all_perms = dip_cache().get('permissions')
+    prefix = get_config('CACHE_PREFIX_KEY', 'dip-')
+    all_perms = dip_cache().get(prefix + 'permissions')
 
     # Build the cache dictionary for all
     # permissions if is not ready yet.
@@ -141,7 +142,7 @@ def string_to_permission(perm):
         for perm_obj in query:
             key = permission_to_string(perm_obj)
             all_perms[key] = perm_obj
-        dip_cache().set('permissions', all_perms)
+        dip_cache().set(prefix + 'permissions', all_perms)
 
     # Get the Permission instance
     # from the cache dictionary.
@@ -285,7 +286,9 @@ def generate_cache_key(user, obj=None):
     if obj:
         str_obj = str(obj.__class__) + str(obj) + str(obj.id)
         key.update(str_obj.encode('utf-8'))
-    return key.hexdigest()
+
+    prefix = get_config('CACHE_PREFIX_KEY', 'dip-')
+    return prefix + key.hexdigest()
 
 
 def delete_from_cache(user, obj=None):
