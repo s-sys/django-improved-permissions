@@ -105,7 +105,7 @@ class MixinsTest(TestCase):
         # Get all users with who is Author of "book".
         self.book.assign_role(self.john, Author)
         result = self.book.get_users(Author)
-        self.assertEqual(result, [self.john, self.bob])
+        self.assertEqual(list(result), [self.bob, self.john])
 
         # Trying to use the reverse GerericRelation.
         reverse = list(self.book.roles.values_list('user', flat=True))
@@ -113,7 +113,7 @@ class MixinsTest(TestCase):
 
         # Get all users with any role to "library".
         result = self.library.get_users()
-        self.assertEqual(result, [self.mike])
+        self.assertEqual(list(result), [self.mike])
 
         # Try to get users list from a object
         # using a wrong Role class.
@@ -121,8 +121,9 @@ class MixinsTest(TestCase):
             self.library.get_users(Advisor)
 
         # Get all users with any role and any object.
-        result = get_users()
-        self.assertEqual(result, [self.john, self.bob, self.mike])
+        # As the result is a QuerySet, we use order_by()
+        result = get_users().order_by('-username')
+        self.assertEqual(list(result), [self.mike, self.john, self.bob])
 
         self.john.remove_role(Advisor)
         self.assertFalse(self.john.has_role(Advisor, self.bob))

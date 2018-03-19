@@ -1,5 +1,6 @@
 """ permissions shortcuts """
 # pylint: disable=too-many-lines
+from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 
 from improved_permissions.exceptions import (InvalidPermissionAssignment,
@@ -61,40 +62,37 @@ def get_user(role_class=None, obj=None):
 def get_users(role_class=None, obj=None):
     """
     If "role_class" and "obj" is provided,
-    returns a list of Users instances who
-    has this role class attached to the
+    returns a QuerySet of users who has
+    this role class attached to the
     object.
 
     If only "role_class" is provided, returns
-    a list of Users who has this role class
-    attached to any object.
+    a QuerySet of users who has this role
+    class attached to any object.
 
     If neither "role_class" or "obj" are provided,
-    returns a list of all Users who has any role
-    class attached to any object.
+    returns all users of the project.
     """
 
-    query = UserRole.objects.select_related('user').all()
+    query = get_user_model().objects.all()
     role = None
 
     if role_class:
         # All users who have "role_class" attached to any object.
         role = get_roleclass(role_class)
-        query = query.filter(role_class=role.get_class_name())
+        query = query.filter(roles__role_class=role.get_class_name())
 
     if obj:
         # All users who have any role attached to the object.
         ct_obj = ContentType.objects.get_for_model(obj)
-        query = query.filter(content_type=ct_obj.id, object_id=obj.id)
+        query = query.filter(roles__content_type=ct_obj.id, roles__object_id=obj.id)
 
     # Check if object belongs
     # to the role class.
     check_my_model(role, obj)
 
-    # TODO
-    result = set(ur_obj.user for ur_obj in query)
-    # TODO
-    return list(result)
+    # Return as a distinct QuerySet.
+    return query.distinct()
 
 
 def get_objects(user, role_class=None, model=None):
