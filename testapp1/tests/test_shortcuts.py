@@ -7,7 +7,8 @@ from improved_permissions.roles import ALL_MODELS, Role, RoleManager
 from improved_permissions.shortcuts import (assign_permission, assign_role,
                                             assign_roles, get_user, get_users,
                                             has_permission, has_role,
-                                            remove_role, remove_roles)
+                                            remove_all, remove_role,
+                                            remove_roles)
 from improved_permissions.templatetags.roletags import get_role as tg_get_role
 from improved_permissions.templatetags.roletags import has_perm as tg_has_perm
 from testapp1.models import Chapter, MyUser, UniqueTogether
@@ -217,7 +218,8 @@ class ShortcutsTest(TestCase):
 
         # Remove all roles from the project.
         assign_roles([self.john, self.mike], Teacher, self.bob)
-        remove_roles()
+        remove_all(Coordenator)
+        remove_all(Teacher)
         self.assertEqual(list(get_users(Coordenator)), [])
         self.assertEqual(list(get_users(Teacher)), [])
 
