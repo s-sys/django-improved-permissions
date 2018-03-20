@@ -281,7 +281,7 @@ def assign_roles(users_list, role_class, obj=None):
         delete_from_cache(user, obj)
 
 
-def remove_role(user=None, role_class=None, obj=None):
+def remove_role(user, role_class=None, obj=None):
     """
     Proxy method to be used for one
     User instance.
@@ -289,7 +289,7 @@ def remove_role(user=None, role_class=None, obj=None):
     remove_roles([user], role_class, obj)
 
 
-def remove_roles(users_list=None, role_class=None, obj=None):
+def remove_roles(users_list, role_class=None, obj=None):
     """
     Delete all RolePermission objects in the database
     referencing the followling role_class to the
@@ -297,7 +297,7 @@ def remove_roles(users_list=None, role_class=None, obj=None):
     If "obj" is provided, only the instances refencing
     this object will be deleted.
     """
-    query = UserRole.objects.all()
+    query = UserRole.objects.filter(user__in=users_list)
     role = None
 
     if role_class:
@@ -314,16 +314,49 @@ def remove_roles(users_list=None, role_class=None, obj=None):
     # to the role class.
     check_my_model(role, obj)
 
-    if users_list:
-        # Filtering by users.
-        query = query.filter(user__in=users_list)
-
-        # Cleaning the cache system.
-        for user in users_list:
-            delete_from_cache(user, obj)
+    # Cleaning the cache system.
+    for user in users_list:
+        delete_from_cache(user, obj)
 
     # Cleaning the database.
     query.delete()
+
+
+def remove_all(role_class=None, obj=None):
+    """
+    Remove all roles of the project.
+
+    If "role_class" is provided,
+    only the roles of "role_class"
+    will be affected.
+
+    If "obj" is provided, only
+    users for that object will
+    lose the role.
+    """
+    query = UserRole.objects.all()
+    role = None
+
+    if role_class:
+        # Filtering by role class.
+        role = get_roleclass(role_class)
+        query = UserRole.objects.filter(role_class=role.get_class_name())
+
+    if obj:
+        # Filtering by object.
+        ct_obj = ContentType.objects.get_for_model(obj)
+        query = query.filter(content_type=ct_obj.id, object_id=obj.id)
+
+    # Check if object belongs
+    # to the role class.
+    check_my_model(role, obj)
+
+    # Cleaning the cache system.
+    for role_obj in query:
+        delete_from_cache(role_obj.user, role_obj.obj)
+
+        # Cleaning the database.
+        role_obj.delete()
 
 
 def has_permission(user, permission, obj=None):

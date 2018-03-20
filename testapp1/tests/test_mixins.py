@@ -147,6 +147,39 @@ class MixinsTest(TestCase):
         self.assertEqual(self.mike.get_roles(self.book), [Author, Reviewer])
         self.assertEqual(self.book.get_roles(self.mike), [Author, Reviewer])
 
+    def test_remove_all(self):
+        """ test if the remove_all shortcut works fine """
+        self.book.assign_role(self.john, Author)
+        self.book.assign_role(self.mike, Reviewer)
+
+        self.assertEqual(list(self.book.get_users()), [self.john, self.mike])
+        self.assertTrue(self.john.has_permission('testapp1.add_book', self.book))
+        self.assertTrue(self.mike.has_permission('testapp1.review', self.book))
+
+        # Remove all Authors from "book".
+        self.book.remove_all(Author)
+        self.assertEqual(list(self.book.get_users()), [self.mike])
+        self.assertFalse(self.john.has_permission('testapp1.add_book', self.book))
+
+        # Remove all Reviewers from "book".
+        self.book.remove_all(Reviewer)
+        self.assertEqual(list(self.book.get_users()), [])
+        self.assertFalse(self.mike.has_permission('testapp1.review', self.book))
+
+        # Assigning the roles again.
+        self.book.assign_role(self.john, Author)
+        self.book.assign_role(self.mike, Reviewer)
+
+        self.assertEqual(list(self.book.get_users()), [self.john, self.mike])
+        self.assertTrue(self.john.has_permission('testapp1.add_book', self.book))
+        self.assertTrue(self.mike.has_permission('testapp1.review', self.book))
+
+        # Remove any user of any role from "book".
+        self.book.remove_all()
+        self.assertEqual(list(self.book.get_users()), [])
+        self.assertFalse(self.john.has_permission('testapp1.add_book', self.book))
+        self.assertFalse(self.mike.has_permission('testapp1.review', self.book))
+
     def test_get_objects(self):
         """ test if the get_objects method works fine """
         self.book.assign_role(self.bob, Author)

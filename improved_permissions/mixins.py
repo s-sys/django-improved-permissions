@@ -89,6 +89,9 @@ class RoleMixin(models.Model):
     def remove_roles(self, users_list, role_class=None):
         return shortcuts.remove_roles(users_list, role_class, self)
 
+    def remove_all(self, role_class=None):
+        return shortcuts.remove_all(role_class, self)
+
 
 class PermissionMixin(object):
     """
