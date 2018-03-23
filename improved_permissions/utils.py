@@ -187,12 +187,14 @@ def get_parents(model):
         parents_list = getattr(options, 'permission_parents', None)
         if parents_list:
             for parent in parents_list:
-                parent_attr = getattr(model, parent, None)
-                if parent_attr:
-                    result.append(parent_attr)
-                else:
+                field = getattr(model, parent, False)
+                if field is False:
+                    # Field does not exist.
                     raise ParentNotFound('The field "%s" was not found in the '
                                          'model "%s".' % (parent, str(model)))
+                elif field is not None:
+                    # Only getting non-null parents.
+                    result.append(field)
     return result
 
 
