@@ -42,7 +42,7 @@ class WrongDenyRole(Role):
 class WrongPermissionRole(Role):
     verbose_name = "Role"
     models = [MyUser]
-    deny = ['I am not a permission.']
+    deny = ['not.permission']
 
 
 class RoleManagerTest(TestCase):
@@ -67,7 +67,7 @@ class RoleManagerTest(TestCase):
             self.assertEqual(get_config('MODULE', 'new_roles'), 'new_roles')
 
         # Test the default cache prefix key
-        self.assertEqual(get_config('CACHE_PREFIX_KEY', 'prefix'), 'dip-')
+        self.assertEqual(get_config('CACHE_PREFIX_KEY', 'prefix'), 'dip')
 
         # Test the new cache prefix key via settings
         new_ipc = {'CACHE_PREFIX_KEY': 'django-improved-permissions-'}

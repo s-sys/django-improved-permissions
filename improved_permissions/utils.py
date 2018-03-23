@@ -5,6 +5,8 @@ import inspect
 from improved_permissions.exceptions import (ImproperlyConfigured, NotAllowed,
                                              ParentNotFound, RoleNotFound)
 
+CACHE_KEY_PREFIX = 'dip'
+
 
 def is_role(role_class):
     """
@@ -129,27 +131,24 @@ def string_to_permission(perm):
     """
     from django.contrib.auth.models import Permission
 
-    # Getting the list of all permissions
-    # from the cache.
-    prefix = get_config('CACHE_PREFIX_KEY', 'dip-')
-    all_perms = dip_cache().get(prefix + 'permissions')
+    # Checking if the Permission instance
+    # exists in the cache system.
+    prefix = get_config('CACHE_PREFIX_KEY', CACHE_KEY_PREFIX)
+    key = '{}-permission-{}'.format(prefix, perm)
+    perm_obj = dip_cache().get(key)
 
-    # Build the cache dictionary for all
-    # permissions if is not ready yet.
-    if all_perms is None:
-        all_perms = dict()
-        query = Permission.objects.select_related('content_type').all()
-        for perm_obj in query:
-            key = permission_to_string(perm_obj)
-            all_perms[key] = perm_obj
-        dip_cache().set(prefix + 'permissions', all_perms)
+    # If not, creates the query to
+    # get the Permission instance
+    # and store into the cache.
+    if perm_obj is None:
+        app, codename = perm.split('.')
+        perm_obj = (Permission.objects
+                    .select_related('content_type')
+                    .filter(content_type__app_label=app, codename=codename)
+                    .get())
+        dip_cache().set(key, perm_obj)
 
-    # Get the Permission instance
-    # from the cache dictionary.
-    try:
-        return all_perms[perm]
-    except KeyError:
-        raise AttributeError
+    return perm_obj
 
 
 def permission_to_string(perm):
@@ -289,8 +288,8 @@ def generate_cache_key(user, obj=None):
         str_obj = str(obj.__class__) + str(obj) + str(obj.id)
         key.update(str_obj.encode('utf-8'))
 
-    prefix = get_config('CACHE_PREFIX_KEY', 'dip-')
-    return prefix + key.hexdigest()
+    prefix = get_config('CACHE_PREFIX_KEY', CACHE_KEY_PREFIX)
+    return '{}-userrole-{}'.format(prefix, key.hexdigest())
 
 
 def delete_from_cache(user, obj=None):
