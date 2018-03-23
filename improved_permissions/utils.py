@@ -131,14 +131,15 @@ def string_to_permission(perm):
     """
     from django.contrib.auth.models import Permission
 
-    # Getting the list of all permissions
-    # from the cache.
+    # Checking if the Permission instance
+    # exists in the cache system.
     prefix = get_config('CACHE_PREFIX_KEY', CACHE_KEY_PREFIX)
     key = '{}permission-[{}]'.format(prefix, perm)
     perm_obj = dip_cache().get(key)
 
-    # Build the cache dictionary for all
-    # permissions if is not ready yet.
+    # If not, creates the query to
+    # get the Permission instance
+    # and store into the cache.
     if perm_obj is None:
         app, codename = perm.split('.')
         perm_obj = (Permission.objects
@@ -147,8 +148,6 @@ def string_to_permission(perm):
                     .get())
         dip_cache().set(key, perm_obj)
 
-    # Get the Permission instance
-    # from the cache dictionary.
     return perm_obj
 
 
