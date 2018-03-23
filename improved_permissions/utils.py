@@ -5,7 +5,7 @@ import inspect
 from improved_permissions.exceptions import (ImproperlyConfigured, NotAllowed,
                                              ParentNotFound, RoleNotFound)
 
-CACHE_KEY_PREFIX = 'dip-'
+CACHE_KEY_PREFIX = 'dip'
 
 
 def is_role(role_class):
@@ -134,7 +134,7 @@ def string_to_permission(perm):
     # Checking if the Permission instance
     # exists in the cache system.
     prefix = get_config('CACHE_PREFIX_KEY', CACHE_KEY_PREFIX)
-    key = '{}permission-[{}]'.format(prefix, perm)
+    key = '{}-permission-{}'.format(prefix, perm)
     perm_obj = dip_cache().get(key)
 
     # If not, creates the query to
@@ -289,7 +289,7 @@ def generate_cache_key(user, obj=None):
         key.update(str_obj.encode('utf-8'))
 
     prefix = get_config('CACHE_PREFIX_KEY', CACHE_KEY_PREFIX)
-    return prefix + key.hexdigest()
+    return '{}-userrole-{}'.format(prefix, key.hexdigest())
 
 
 def delete_from_cache(user, obj=None):

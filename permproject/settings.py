@@ -132,7 +132,7 @@ STATIC_URL = '/static/'
 AUTH_USER_MODEL = 'testapp1.MyUser'
 
 IMPROVED_PERMISSIONS_SETTINGS = {
-    'CACHE_PREFIX_KEY': 'dip-',
+    'CACHE_PREFIX_KEY': 'dip',
     'CACHE': 'default',
     'MODULE': 'roles',
 }
