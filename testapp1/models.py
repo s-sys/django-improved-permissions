@@ -32,13 +32,14 @@ class Book(RoleMixin, models.Model):
 class Chapter(RoleMixin, models.Model):
     """ Chapter test model """
     title = models.CharField(max_length=256)
-    book = models.ForeignKey(Book, on_delete=models.CASCADE)
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='chapters')
+    cited_by = models.ForeignKey(Book, blank=True, null=True, on_delete=models.PROTECT, related_name='citations')
 
     class Meta:
         permissions = [('view_chapter', 'View Chapter'),]
 
     class RoleOptions:
-        permission_parents = ['book']
+        permission_parents = ['book', 'cited_by']
 
 
 class Paragraph(RoleMixin, models.Model):
