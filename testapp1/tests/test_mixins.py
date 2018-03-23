@@ -197,21 +197,3 @@ class MixinsTest(TestCase):
         # Get all objects of john but only of User model.
         result = self.john.get_objects(model=MyUser)
         self.assertEqual(result, [self.bob])
-
-    def test_get_permissions(self):
-        """ test if the get_permissions method works fine """
-        self.book.assign_role(self.john, Author)
-        self.john.assign_role(Coordenator)
-
-        # Trying to get a permissions list using
-        # a object-related role without a object.
-        with self.assertRaises(NotAllowed):
-            self.john.get_permissions(Author)
-
-        # Trying to get a permissions list using
-        # a non object-related role with a object.
-        with self.assertRaises(NotAllowed):
-            self.john.get_permissions(Coordenator, object)
-
-        self.john.get_permissions(Author, self.book)
-        self.john.get_permissions(Coordenator)

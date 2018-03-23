@@ -31,9 +31,6 @@ class UserRoleMixin(models.Model):
     def get_objects(self, role_class=None, model=None):
         return shortcuts.get_objects(self, role_class, model)
 
-    def get_permissions(self, role_class, obj=None):
-        return shortcuts.get_permissions(self, role_class, obj)
-
     def assign_role(self, role_class, obj=None):
         return shortcuts.assign_role(self, role_class, obj)
 
