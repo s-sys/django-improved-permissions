@@ -42,7 +42,7 @@ class WrongDenyRole(Role):
 class WrongPermissionRole(Role):
     verbose_name = "Role"
     models = [MyUser]
-    deny = ['I am not a permission.']
+    deny = ['not.permission']
 
 
 class RoleManagerTest(TestCase):
