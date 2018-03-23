@@ -121,3 +121,29 @@ def get_objects(user, role_class=None, model=None):
     result = set(ur_obj.obj for ur_obj in query)
     # TODO
     return list(result)
+
+
+def get_role(user, obj=None):
+    """
+    Proxy method to be used when you sure that
+    will have only one role class attached.
+    """
+    return get_roles(user, obj)[0]
+
+
+def get_roles(user, obj=None):
+    """
+    Return a list of role classes
+    that is attached to "user".
+
+    If "obj" is provided, the object
+    must be attached as well.
+    """
+    query = UserRole.objects.filter(user=user)
+    if obj:
+        ct_obj = ContentType.objects.get_for_model(obj)
+        query = query.filter(content_type=ct_obj.id, object_id=obj.id)
+
+    # Transform the string representations
+    # into role classes and return as list.
+    return [get_roleclass(ur_obj.role_class) for ur_obj in query]
