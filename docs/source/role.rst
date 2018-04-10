@@ -30,9 +30,109 @@ The ``Role`` class also has other attributes, which are considered as optional. 
 Attribute                             Type     Default   Description
 ===================================== ======== ========= ===
 ``unique``                            ``bool`` ``False`` Only one User instance is allowed to be attached to a given object using this role.
+``ranking``                           ``int``  ``0``     Used in order to solve permissions conflit. More about this in the examples.
 ``inherit``                           ``bool`` ``False`` Allows this role to inherit permissions from its child models. Read about this feature here.
 ``inherit_allow`` or ``inherit_deny`` ``list`` ``[]``    Specifies which inherit permissions should be allowed or denied. You must define only one of them.
 ===================================== ======== ========= ===
+
+Unique Roles
+^^^^^^^^^^^^
+
+You will probably arrive in a case where an object can only have one User instance assigned to a particular role. But, it is as easy as learning python to do this using DIP. For example: ::
+
+    class CarOwner(Role):
+        verbose_name = 'Owner of a Car'
+        models = [Car]
+        deny = []
+
+Now, let's test this on the terminal: ::
+
+    my_car = Car.objects.create(name='My New Car')
+
+    # Giving a new car to john!
+    john = User.objects.get(pk=1)
+    assign_role(john, CarOwner, my_car)
+
+    # That's right.
+    has_role(john, CarOwner, my_car)
+    >>> True
+
+    # Oh, no...
+    bob = User.objects.get(pk=2)
+    assign_role(bob, CarOwner, my_car)
+
+    # And now?
+    has_role(bob, CarOwner, my_car)
+    >>> True # Noooooo :(
+
+To fix this, let's change the implementation of the role class and add the ``unique`` attribute. ::
+
+    class CarOwner(Role):
+        verbose_name = 'Owner of a Car'
+        models = [Car]
+        deny = []
+        unique = True
+
+Let's test this again: ::
+
+    my_car = Car.objects.create(name='My New Car')
+
+    # Giving a new car to john!
+    john = User.objects.get(pk=1)
+    assign_role(john, CarOwner, my_car)
+
+    # That's right.
+    has_role(john, CarOwner, my_car)
+    >>> True
+
+    # And now we are protected :D
+    bob = User.objects.get(pk=2)
+    assign_role(bob, CarOwner, my_car)
+    >>> InvalidRoleAssignment: 'The object "Car" already has a "CarOwner" attached and it is marked as unique.'
+
+Role Ranking
+^^^^^^^^^^^^
+
+There are several cases that can lead your project to have permissions conflicts. We have a basic scenario to show you how this happens and how you can use role ranking to solve it. For example: ::
+
+    class Teacher(Role):
+        verbose_name = 'Teacher'
+        models = [User]
+        deny = ['user.update_user']
+
+    class Advisor(Role):
+        verbose_name = 'Advisor'
+        models = [User]
+        deny = []
+
+Note that these roles have conflicting permissions if both are assigned to the same User instance. To solve this conflict problem, you can assign an integer value to ``ranking``, present in the Role class. This value will be used to sort the permissions to be used by the DIP.
+
+In other words, the lower the ``ranking`` value, more important this role is. So, let's work using ranking now: ::
+
+    class Teacher(Role):
+        verbose_name = 'Teacher'
+        models = [User]
+        deny = ['user.update_user']
+        ranking = 1
+
+    class Advisor(Role):
+        verbose_name = 'Teacher'
+        models = [User]
+        deny = []
+        ranking = 0
+
+Now let's test this on the terminal: ::
+
+    john = User.objects.get(pk=1)
+    bob = User.objects.get(pk=2)
+
+    assign_role(john, Advisor, bob)
+    assign_role(john, Teacher, bob)
+
+    # Now has_permission returns True using
+    # the role "Advisor" by Role Ranking.
+    has_permission(john, 'user.update_user', bob)
+    >>> True
 
 Role Classes using ALL_MODELS
 *****************************
