@@ -133,6 +133,7 @@ AUTH_USER_MODEL = 'testapp1.MyUser'
 
 IMPROVED_PERMISSIONS_SETTINGS = {
     'CACHE_PREFIX_KEY': 'dip',
+    'PERSISTENT': False,
     'CACHE': 'default',
     'MODULE': 'roles',
 }
