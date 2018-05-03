@@ -4,13 +4,13 @@ from testapp1.models import Book, Chapter, MyUser, Paragraph
 
 
 class Author(Role):
-    verbose_name = 'Autor'
+    verbose_name = 'Author'
     models = [Book, Chapter, Paragraph]
     deny = ['testapp1.review']
 
 
 class Reviewer(Role):
-    verbose_name = 'Revisor'
+    verbose_name = 'Reviewer'
     models = [Book]
     allow = ['testapp1.review']
     inherit = True

@@ -5,6 +5,7 @@ from improved_permissions.exceptions import NotAllowed
 from improved_permissions.models import RolePermission
 from improved_permissions.roles import ALL_MODELS, Role, RoleManager
 from improved_permissions.shortcuts import get_users
+from improved_permissions.utils import dip_cache
 from testapp1.models import Book, Chapter, MyUser, Paragraph
 from testapp1.roles import Advisor, Author, Coordenator, Reviewer
 from testapp2.models import Library
@@ -32,6 +33,7 @@ class MixinsTest(TestCase):
         RoleManager.register_role(Coordenator)
         RoleManager.register_role(Reviewer)
         RoleManager.register_role(LibraryOwner)
+        dip_cache().clear()
 
     def test_inherit_permission(self):
         """ test if the inherit works fine """
@@ -79,6 +81,16 @@ class MixinsTest(TestCase):
 
         self.book.remove_role(self.bob, Author)
         self.library.remove_roles([self.john], LibraryOwner)
+
+    def test_persistent_permission(self):
+        """ test permission behavior over persistent mode"""
+        self.john.assign_role(Coordenator)
+        self.john.assign_role(Author, self.book)
+        self.assertFalse(self.john.has_permission('testapp1.review', self.book))
+
+        new_settings = {'PERSISTENT': True}
+        with self.settings(IMPROVED_PERMISSIONS_SETTINGS=new_settings):
+            self.assertTrue(self.john.has_permission('testapp1.review', self.book))
 
     def test_get_users(self):
         """ test if the get_user method works fine """
