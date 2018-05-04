@@ -3,13 +3,13 @@ python: 3.6
 git:
   depth: false
 install:
-- pip install -r permproject/requirements/ci.txt
+- pip install -r permproject/requirements/reqs.txt
 script:
 - pylint --load-plugins=pylint_django **/*.py
 - coverage run manage.py test
 after_success:
 - coverage report
-- coverage html
+- coveralls
 deploy:
   provider: pypi
   user: ssys
