@@ -62,17 +62,20 @@ def has_permission(user, permission, obj=None):
                     result = perm_tuple[1]
 
                     # We got a result.
-                    # Now checking for persist mode.
+                    # Now checking for persistent mode.
                     if persistent and not result:
                         break
                     else:
                         return result
 
-            # Now, we are in inherit mode. We need to check
-            # if the Role allows the inherit.
-            inherit = inherit_check(get_roleclass(role_s), permission)
+            # Jump inherit mode for the first check.
+            if obj and current_obj == obj:
+                continue
 
-            # Checking for persist mode once again.
+            # We need to check if the Role allows this mode.
+            inherit = inherit_check(role_s, permission)
+
+            # Checking for persistent mode once again.
             if persistent and not inherit:
                 pass
             else:

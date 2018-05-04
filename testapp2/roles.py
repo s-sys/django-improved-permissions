@@ -10,3 +10,9 @@ class LibraryOwner(roles.Role):
     deny = []
     inherit = True
     inherit_deny = ['testapp1.review']
+
+
+class LibraryWorker(roles.Role):
+    verbose_name = 'Worker'
+    models = [Library]
+    allow = []
