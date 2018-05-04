@@ -9,7 +9,7 @@ from improved_permissions.utils import dip_cache
 from testapp1.models import Book, Chapter, MyUser, Paragraph
 from testapp1.roles import Advisor, Author, Coordenator, Reviewer
 from testapp2.models import Library
-from testapp2.roles import LibraryOwner
+from testapp2.roles import LibraryOwner, LibraryWorker
 
 
 class MixinsTest(TestCase):
@@ -33,6 +33,7 @@ class MixinsTest(TestCase):
         RoleManager.register_role(Coordenator)
         RoleManager.register_role(Reviewer)
         RoleManager.register_role(LibraryOwner)
+        RoleManager.register_role(LibraryWorker)
         dip_cache().clear()
 
     def test_inherit_permission(self):
@@ -90,6 +91,11 @@ class MixinsTest(TestCase):
 
         new_settings = {'PERSISTENT': True}
         with self.settings(IMPROVED_PERMISSIONS_SETTINGS=new_settings):
+            # Test persistent mode.
+            self.assertTrue(self.john.has_permission('testapp1.review', self.book))
+
+            # Testing using a role with inherit=False in order to ignore it aswell.
+            self.john.assign_role(LibraryWorker, self.library)
             self.assertTrue(self.john.has_permission('testapp1.review', self.book))
 
     def test_get_users(self):

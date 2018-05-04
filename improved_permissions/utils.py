@@ -214,13 +214,14 @@ def is_unique_together(model):
     return False
 
 
-def inherit_check(role, permission):
+def inherit_check(role_s, permission):
     """
     Check if the role class has the following
     permission in inherit mode.
     """
     from improved_permissions.roles import ALLOW_MODE
 
+    role = get_roleclass(role_s)
     if role.inherit is True:
         if role.get_inherit_mode() == ALLOW_MODE:
             return True if permission in role.inherit_allow else False
