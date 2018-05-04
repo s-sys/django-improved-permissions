@@ -55,31 +55,21 @@ def has_permission(user, permission, obj=None):
         current_obj = stack.pop(0)
         roles_list = get_from_cache(user, current_obj)
         for role_s, perm_list in roles_list:
-
-            # Check for permissions.
+            # Check for permissions in the database.
+            result = None
             for perm_tuple in perm_list:
                 if perm_tuple[0] == perm_obj.id:
                     result = perm_tuple[1]
+                    break
 
-                    # We got a result.
-                    # Now checking for persistent mode.
-                    if persistent and not result:
-                        break
-                    else:
-                        return result
+            # If nothing was found, check for inherit results.
+            if result is None:
+                result = inherit_check(role_s, permission)
 
-            # Jump inherit mode for the first check.
-            if obj and current_obj == obj:
-                continue
-
-            # We need to check if the Role allows this mode.
-            inherit = inherit_check(role_s, permission)
-
-            # Checking for persistent mode once again.
-            if persistent and not inherit:
-                pass
-            else:
-                return inherit
+            # We got a result.
+            # Now checking for persistent mode.
+            if result or not persistent:
+                return result
 
         # Try to look even further
         # for possible parent fields.
