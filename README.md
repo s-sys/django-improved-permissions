@@ -1,5 +1,6 @@
 # Django Improved Permissions
 
+[![PyPI version](https://badge.fury.io/py/django-improved-permissions.svg)](https://badge.fury.io/py/django-improved-permissions)
 [![Build Status](https://travis-ci.org/s-sys/django-improved-permissions.svg?branch=master)](https://travis-ci.org/s-sys/django-improved-permissions)
 [![Documentation Status](https://readthedocs.org/projects/django-improved-permissions/badge/?version=latest)](http://django-improved-permissions.readthedocs.io/en/latest/?badge=latest)
 

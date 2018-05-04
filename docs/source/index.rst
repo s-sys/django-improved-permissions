@@ -1,6 +1,10 @@
 Welcome to Django Improved Permissions!
 =======================================
 
+.. image:: https://badge.fury.io/py/django-improved-permissions.svg
+    :target: https://badge.fury.io/py/django-improved-permissions
+    :alt: PyPI version
+
 .. image:: https://travis-ci.org/s-sys/django-improved-permissions.svg?branch=master
    :target: https://travis-ci.org/s-sys/django-improved-permissions
    :alt: Build Status
