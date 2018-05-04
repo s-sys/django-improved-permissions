@@ -32,7 +32,7 @@ Django Improved Permissions (DIP) is a django application made to make django's 
    shortcuts
    mixins
    inheritance
-   howitworks
+   api
    help
 
 
