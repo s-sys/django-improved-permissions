@@ -50,21 +50,22 @@ def has_permission(user, permission, obj=None):
     stack = list()
     stack.append(obj)
     while stack:
-        # Getting the dictionary of permissions
-        # from the cache.
+        # Getting the permissions list of the first
+        # role class based on their role ranking.
         current_obj = stack.pop(0)
-        roles_list = get_from_cache(user, current_obj)
-        for role_s, perm_list in roles_list:
-            # Check for permissions in the database.
+        result_tuple = get_from_cache(user, current_obj)
+
+        if result_tuple:
+            # Checking now for database results.
             result = None
-            for perm_tuple in perm_list:
+            for perm_tuple in result_tuple[1]:
                 if perm_tuple[0] == perm_obj.id:
                     result = perm_tuple[1]
                     break
 
             # If nothing was found, check for inherit results.
             if result is None:
-                result = inherit_check(role_s, permission)
+                result = inherit_check(result_tuple[0], permission)
 
             # We got a result.
             # Now checking for persistent mode.
