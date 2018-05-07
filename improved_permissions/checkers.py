@@ -40,20 +40,23 @@ def has_role(user, role_class=None, obj=None):
     return query.count() > 0
 
 
-def has_permission(user, permission, obj=None):
+def has_permission(user, permission, obj=None, any_object=False, persistent=None):
     """
     Return True if the "user" has the "permission".
     """
-    persistent = get_config('PERSISTENT', False)
-
     perm_obj = string_to_permission(permission)
+
+    # Checking the 'persistent' bypass kwarg.
+    if not isinstance(persistent, bool):
+        persistent = get_config('PERSISTENT', False)
+
     stack = list()
     stack.append(obj)
     while stack:
         # Getting the permissions list of the first
         # role class based on their role ranking.
         current_obj = stack.pop(0)
-        result_tuple = get_from_cache(user, current_obj)
+        result_tuple = get_from_cache(user, current_obj, any_object)
 
         if result_tuple:
             # Checking now for database results.

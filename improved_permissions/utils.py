@@ -274,7 +274,7 @@ def check_my_model(role, obj):
                          '.' % (model_name, role.get_verbose_name()))
 
 
-def generate_cache_key(user, obj=None):
+def generate_cache_key(user, obj, any_object):
     """
     Generate a md5 digest based on the
     string representation of the user
@@ -283,28 +283,31 @@ def generate_cache_key(user, obj=None):
     from hashlib import md5
 
     key = md5()
-    str_user = str(user.__class__) + str(user) + str(user.id)
-    key.update(str_user.encode('utf-8'))
+    str_key = str(user.__class__) + str(user) + str(user.id)
     if obj:
-        str_obj = str(obj.__class__) + str(obj) + str(obj.id)
-        key.update(str_obj.encode('utf-8'))
+        str_key += str(obj.__class__) + str(obj) + str(obj.id)
+    elif any_object:
+        str_key += 'any'
 
+    key.update(str_key.encode('utf-8'))
     prefix = get_config('CACHE_PREFIX_KEY', CACHE_KEY_PREFIX)
     return '{}-userrole-{}'.format(prefix, key.hexdigest())
 
 
-def delete_from_cache(user, obj=None):
+def delete_from_cache(user, obj):
     """
     Delete all permissions data from
     the cache about the user and the
     object passed via arguments.
     """
+    key = generate_cache_key(user, obj, any_object=False)
+    dip_cache().delete(key)
 
-    key = generate_cache_key(user, obj)
+    key = generate_cache_key(user, obj=None, any_object=True)
     dip_cache().delete(key)
 
 
-def get_from_cache(user, obj=None):
+def get_from_cache(user, obj, any_object):
     """
     Get all permissions data about
     the user and the object passed
@@ -315,7 +318,7 @@ def get_from_cache(user, obj=None):
     from improved_permissions.models import UserRole
 
     # Key preparation.
-    key = generate_cache_key(user, obj)
+    key = generate_cache_key(user, obj, any_object)
 
     # Check for the cached data.
     data = dip_cache().get(key)
@@ -326,7 +329,7 @@ def get_from_cache(user, obj=None):
         if obj:
             ct_obj = ContentType.objects.get_for_model(obj)
             query = query.filter(content_type=ct_obj.id).filter(object_id=obj.id)
-        else:
+        elif not any_object:
             query = query.filter(content_type__isnull=True).filter(object_id__isnull=True)
 
         # Getting only the required values.

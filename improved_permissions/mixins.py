@@ -37,8 +37,8 @@ class UserRoleMixin(models.Model):
     def remove_role(self, role_class=None, obj=None):
         return shortcuts.remove_role(self, role_class, obj)
 
-    def has_permission(self, permission, obj=None):
-        return shortcuts.has_permission(self, permission, obj)
+    def has_permission(self, permission, obj=None, any_object=False, persistent=None):
+        return shortcuts.has_permission(self, permission, obj, any_object, persistent)
 
 
 class RoleMixin(models.Model):
@@ -98,6 +98,8 @@ class PermissionMixin(object):
     to secure them based in permissions.
     """
     permission_string = ""
+    permission_any_object = False
+    permission_persistent = None
 
     def get_permission_string(self):
         if self.permission_string != "":
@@ -108,7 +110,10 @@ class PermissionMixin(object):
         )
 
     def get_permission_object(self):
-        if hasattr(self, 'permission_object'):
+        if self.permission_any_object:
+            return None
+
+        elif hasattr(self, 'permission_object'):
             return self.permission_object
 
         elif hasattr(self, 'object') and self.object is not None:
@@ -126,7 +131,9 @@ class PermissionMixin(object):
         return shortcuts.has_permission(
             self.request.user,
             self.get_permission_string(),
-            self.get_permission_object()
+            self.get_permission_object(),
+            self.permission_any_object,
+            self.permission_persistent,
         )
 
     def dispatch(self, request, *args, **kwargs):

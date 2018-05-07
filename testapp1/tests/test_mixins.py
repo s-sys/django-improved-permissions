@@ -5,6 +5,7 @@ from improved_permissions.exceptions import NotAllowed
 from improved_permissions.models import RolePermission
 from improved_permissions.roles import ALL_MODELS, Role, RoleManager
 from improved_permissions.shortcuts import get_users
+from improved_permissions.templatetags.roletags import has_perm as tg_has_perm
 from improved_permissions.utils import dip_cache
 from testapp1.models import Book, Chapter, MyUser, Paragraph
 from testapp1.roles import Advisor, Author, Coordenator, Reviewer
@@ -83,15 +84,34 @@ class MixinsTest(TestCase):
         self.book.remove_role(self.bob, Author)
         self.library.remove_roles([self.john], LibraryOwner)
 
+    def test_anyobject_permissions(self):
+        """ test the has_permission function using any_object=True """
+        self.john.assign_role(LibraryOwner, self.library)
+        self.assertTrue(self.john.has_permission('testapp1.change_book', self.book))
+        self.assertTrue(tg_has_perm(self.john, 'testapp1.change_book', self.book))
+
+        # Without an object, we got a False.
+        self.assertFalse(self.john.has_permission('testapp1.change_book'))
+        self.assertFalse(tg_has_perm(self.john, 'testapp1.change_book'))
+
+        # Using any_object=True we are allowing to bypass the instance check.
+        self.assertTrue(self.john.has_permission('testapp1.change_book', any_object=True))
+        self.assertTrue(tg_has_perm(self.john, 'testapp1.change_book', 'any'))
+
     def test_persistent_permission(self):
-        """ test permission behavior over persistent mode"""
+        """ test permission behavior over persistent mode """
         self.john.assign_role(Coordenator)
         self.john.assign_role(Author, self.book)
         self.assertFalse(self.john.has_permission('testapp1.review', self.book))
+        self.assertFalse(tg_has_perm(self.john, 'testapp1.review', self.book))
+
+        # Test persistent mode using the 'persistent' bypass kwarg.
+        self.assertTrue(self.john.has_permission('testapp1.review', self.book, persistent=True))
+        self.assertTrue(tg_has_perm(self.john, 'testapp1.review', self.book, True))
 
         new_settings = {'PERSISTENT': True}
         with self.settings(IMPROVED_PERMISSIONS_SETTINGS=new_settings):
-            # Test persistent mode.
+            # Test persistent mode using default settings.
             self.assertTrue(self.john.has_permission('testapp1.review', self.book))
 
             # Testing using a role with inherit=False in order to ignore it aswell.
