@@ -88,7 +88,7 @@ class PermissionMixinTest(TestCase):
         self.assertEqual(perm_obj, self.john)
 
     def test_despatch(self):
-        """ ... """
+        """ test if dispatch calls check_permission """
         self.bob.assign_role(Advisor, self.john)
         view = RequestView(user=self.bob, obj=self.john)
         view.permission_string = 'testapp1.add_user'
@@ -97,3 +97,11 @@ class PermissionMixinTest(TestCase):
         view.permission_string = 'testapp1.review'
         with self.assertRaises(PermissionDenied):
             view.dispatch(None)
+
+    def test_anyobject_despatch(self):
+        """ test if dispatch calls check_permission using any_object """
+        self.bob.assign_role(Advisor, self.john)
+        view = RequestView(user=self.bob)
+        view.permission_string = 'testapp1.add_user'
+        view.permission_any_object = True
+        self.assertEqual(view.dispatch(None), 'Protected View')

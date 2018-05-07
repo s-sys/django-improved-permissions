@@ -26,8 +26,8 @@ def has_role(user, role_class=None, obj=None):
     return checkers.has_role(user, role_class, obj)
 
 
-def has_permission(user, permission, obj=None):
-    return checkers.has_permission(user, permission, obj)
+def has_permission(user, permission, obj=None, any_object=False, persistent=None):
+    return checkers.has_permission(user, permission, obj, any_object, persistent)
 
 
 def assign_role(user, role_class, obj=None):

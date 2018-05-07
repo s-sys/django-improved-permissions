@@ -8,8 +8,10 @@ register = template.Library()
 
 
 @register.simple_tag
-def has_perm(user, permission, obj=None):
-    return has_permission(user, permission, obj)
+def has_perm(user, permission, obj=None, persistent=None):
+    if obj and isinstance(obj, str) and obj == 'any':
+        return has_permission(user, permission, obj=None, any_object=True, persistent=persistent)
+    return has_permission(user, permission, obj, any_object=False, persistent=persistent)
 
 
 @register.filter
