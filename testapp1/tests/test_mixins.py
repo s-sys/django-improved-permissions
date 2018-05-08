@@ -98,21 +98,35 @@ class MixinsTest(TestCase):
         self.assertTrue(self.john.has_permission('testapp1.change_book', any_object=True))
         self.assertTrue(tg_has_perm(self.john, 'testapp1.change_book', 'any'))
 
+        # Provide an object and use any_object=True
+        # at same time is not allowed.
+        with self.assertRaises(NotAllowed):
+            self.john.has_permission('testapp1.change_book', self.book, any_object=True)
+
     def test_persistent_permission(self):
         """ test permission behavior over persistent mode """
         self.john.assign_role(Coordenator)
         self.john.assign_role(Author, self.book)
         self.assertFalse(self.john.has_permission('testapp1.review', self.book))
         self.assertFalse(tg_has_perm(self.john, 'testapp1.review', self.book))
+        self.assertFalse(tg_has_perm(self.john, 'testapp1.review', self.book, 'non-persistent'))
+
+        # Using the templatetag option incorrectly.
+        with self.assertRaises(NotAllowed):
+            tg_has_perm(self.john, 'testapp1.review', self.book, 'i am not a option.')
 
         # Test persistent mode using the 'persistent' bypass kwarg.
         self.assertTrue(self.john.has_permission('testapp1.review', self.book, persistent=True))
-        self.assertTrue(tg_has_perm(self.john, 'testapp1.review', self.book, True))
+        self.assertTrue(tg_has_perm(self.john, 'testapp1.review', self.book, 'persistent'))
 
         new_settings = {'PERSISTENT': True}
         with self.settings(IMPROVED_PERMISSIONS_SETTINGS=new_settings):
             # Test persistent mode using default settings.
             self.assertTrue(self.john.has_permission('testapp1.review', self.book))
+
+            # Checking if the bypass still has preference.
+            self.assertTrue(tg_has_perm(self.john, 'testapp1.review', self.book, 'persistent'))
+            self.assertFalse(tg_has_perm(self.john, 'testapp1.review', self.book, 'non-persistent'))
 
             # Testing using a role with inherit=False in order to ignore it aswell.
             self.john.assign_role(LibraryWorker, self.library)
