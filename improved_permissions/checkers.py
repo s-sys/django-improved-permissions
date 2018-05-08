@@ -1,6 +1,7 @@
 """checkers functions"""
 from django.contrib.contenttypes.models import ContentType
 
+from improved_permissions.exceptions import NotAllowed
 from improved_permissions.models import UserRole
 from improved_permissions.utils import (check_my_model, get_config,
                                         get_from_cache, get_parents,
@@ -45,6 +46,12 @@ def has_permission(user, permission, obj=None, any_object=False, persistent=None
     Return True if the "user" has the "permission".
     """
     perm_obj = string_to_permission(permission)
+
+    # Checking the 'any_object' bypass kwarg.
+    if any_object and obj:
+        raise NotAllowed(
+            "You cannot provide an object and use any_object=True at same time."
+        )
 
     # Checking the 'persistent' bypass kwarg.
     if not isinstance(persistent, bool):

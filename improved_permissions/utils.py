@@ -344,7 +344,8 @@ def get_from_cache(user, obj, any_object):
         data = dict()
         for item in query:
             perms_list = data.get(item[0], [])
-            perms_list.append((item[1], item[2]))
+            if item[0] and item[1]:
+                perms_list.append((item[1], item[2]))
             data[item[0]] = perms_list
 
         # Ordering the tuple by their Role Ranking values.
