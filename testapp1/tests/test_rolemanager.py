@@ -39,12 +39,6 @@ class WrongDenyRole(Role):
     deny = 'I am not a list'
 
 
-class WrongPermissionRole(Role):
-    verbose_name = "Role"
-    models = [MyUser]
-    deny = ['not.permission']
-
-
 class RoleManagerTest(TestCase):
     """ RoleManager class tests """
 
@@ -108,10 +102,6 @@ class RoleManagerTest(TestCase):
         # Role class with "deny" defined incorrectly.
         with self.assertRaises(ImproperlyConfigured):
             RoleManager.register_role(WrongDenyRole)
-
-        # Role class with "deny" defined incorrectly.
-        with self.assertRaises(ImproperlyConfigured):
-            RoleManager.register_role(WrongPermissionRole)
 
         # Registering the role classes correctly.
         RoleManager.register_role(Advisor)
