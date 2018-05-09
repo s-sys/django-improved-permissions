@@ -2,7 +2,7 @@
 from django.apps import apps
 
 from improved_permissions.exceptions import ImproperlyConfigured, NotAllowed
-from improved_permissions.utils import get_model, string_to_permission
+from improved_permissions.utils import get_model
 
 ALLOW_MODE = 0
 DENY_MODE = 1
@@ -185,11 +185,9 @@ class RoleManager(object):
             )
 
         if c_allow and isinstance(getattr(new_class, allow_field), list):
-            perms_list = getattr(new_class, allow_field)
             result = ALLOW_MODE
 
         elif c_deny and isinstance(getattr(new_class, deny_field), list):
-            perms_list = getattr(new_class, deny_field)
             result = DENY_MODE
         else:
             raise ImproperlyConfigured(
@@ -197,16 +195,6 @@ class RoleManager(object):
                 '"%s".' % (allow_field, deny_field, name)
             )
 
-        # Check if the permissions given via "inherit_allow"
-        # or "inherit_deny" exists in the Permission database.
-        from django.contrib.auth.models import Permission
-        for perm in perms_list:
-            try:
-                string_to_permission(perm)
-            except (AttributeError, Permission.DoesNotExist):
-                raise ImproperlyConfigured(
-                    '"%s" does not exist in the Permission database.' % perm
-                )
         # Return the mode.
         return result
 

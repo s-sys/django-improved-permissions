@@ -92,7 +92,7 @@ class UserRole(models.Model):
                 access = True if perm_s in self.role.allow else False
             else:
                 # [Deny Mode]
-                # Put the acces as "False" only for
+                # Put the access as "False" only for
                 # the permissions in deny list.
                 access = False if perm_s in self.role.deny else True
             role_instances.append(RolePermission(role=self, permission=perm, access=access))
