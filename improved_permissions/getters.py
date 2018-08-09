@@ -66,27 +66,26 @@ def get_users(role_class=None, obj=None):
     If neither "role_class" or "obj" are provided,
     returns all users of the project.
     """
-
-    query = get_user_model().objects.all()
     role = None
+    kwargs = {}
 
     if role_class:
         # All users who have "role_class" attached to any object.
         role = get_roleclass(role_class)
-        query = query.filter(roles__role_class=role.get_class_name())
+        kwargs['roles__role_class'] = role.get_class_name()
 
     if obj:
         # All users who have any role attached to the object.
         ct_obj = ContentType.objects.get_for_model(obj)
-        query = query.filter(roles__content_type=ct_obj.id, roles__object_id=obj.id)
+        kwargs['roles__content_type'] = ct_obj.id
+        kwargs['roles__object_id'] = obj.id
 
     # Check if object belongs
     # to the role class.
     check_my_model(role, obj)
 
     # Return as a distinct QuerySet.
-    return query.distinct()
-
+    return get_user_model().objects.filter(**kwargs).distinct()
 
 def get_objects(user, role_class=None, model=None):
     """
